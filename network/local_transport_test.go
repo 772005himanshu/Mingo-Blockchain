@@ -12,11 +12,10 @@ func TestCoonnect(t *testing.T) {
 
 	tra.Connect(trb)
 	trb.Connect(tra)
-	
-	assert.Equal(t,tra.peers[trb.addr],trb)
-	assert.Equal(t,trb.peers[tra.addr],tra)
-}
 
+	assert.Equal(t, tra.peers[trb.addr], trb)
+	assert.Equal(t, trb.peers[tra.addr], tra)
+}
 
 func TestSendMessage(t *testing.T) {
 	tra := NewLocalTransport("A")
@@ -28,7 +27,7 @@ func TestSendMessage(t *testing.T) {
 	msg := []byte("Hello world")
 	assert.Nil(t, tra.SendMessage(trb.addr, msg))
 
-	rpc := <- trb.Consume() // Comsuming the Channel from the trb to Rpc
+	rpc := <-trb.Consume() // Comsuming the Channel from the trb to Rpc
 	assert.Equal(t, rpc.Payload, msg)
 	assert.Equal(t, rpc.From, tra.addr)
 }
