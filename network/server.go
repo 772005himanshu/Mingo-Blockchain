@@ -11,7 +11,7 @@ type ServerOpts struct {
 
 type Server struct {
 	ServerOpts
-	rpcCh chan RPC 
+	rpcCh  chan RPC
 	quitCh chan struct{}
 }
 
@@ -19,7 +19,7 @@ func NewServer(opts ServerOpts) *Server {
 	return &Server{
 		ServerOpts: opts,
 		rpcCh:      make(chan RPC),
-		quitCh:     make(chan struct{} ,1),
+		quitCh:     make(chan struct{}, 1),
 	}
 }
 
@@ -30,9 +30,9 @@ func (s *Server) Start() {
 free:
 	for {
 		select {
-		case rpc := <-s.rpcCh: // self rpc 
+		case rpc := <-s.rpcCh: // self rpc
 			fmt.Printf("%+v\n", rpc)
-		case <-s.quitCh: // do i need to quit the rpc channel 
+		case <-s.quitCh: // do i need to quit the rpc channel
 			break free
 		// default: // if we could not quit , we got stucked Here
 		case <-ticker.C:
@@ -45,7 +45,7 @@ free:
 
 func (s *Server) initTransports() {
 	for _, tr := range s.Transports {
-		go func(tr Transport) { // go routine 
+		go func(tr Transport) { // go routine
 			for rpc := range tr.Consume() {
 				// handle
 				s.rpcCh <- rpc

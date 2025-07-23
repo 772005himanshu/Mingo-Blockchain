@@ -2,8 +2,10 @@ package network
 
 // Transport Should be Connecting it to the peers to track them
 
-import "fmt"
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 type LocalTransport struct {
 	addr      NetAddr
