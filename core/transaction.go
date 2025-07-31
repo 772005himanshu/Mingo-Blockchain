@@ -4,7 +4,6 @@ import "io"
 
 type Transaction struct {
 	Data []byte
-	
 }
 
 
