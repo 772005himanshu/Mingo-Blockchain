@@ -2,69 +2,53 @@ package core
 
 import (
 	"testing"
-	"time"
-	"bytes"
-	"fmt"
-
-	"github.com/772005himanshu/Mingo-Blockchain/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/772005himanshu/Mingo-Blockchain/crypto"
+	"github.com/772005himanshu/Mingo-Blockchain/types"
+	"time"
+	"fmt"
 )
 
 
-func TestHeader_Encode_Decode(t *testing.T) {
-	h := &Header{
-		Version : 1,
-		PrevBlock: types.RandomHash(),
+func randomBlock(height uint32) *Block {
+	header := &Header {
+		Version: 1,
+		PrevBlockHash: types.RandomHash(),
+		Height: height,
 		Timestamp: uint64(time.Now().UnixNano()),
-		Height: 10,
-		Nonce: 989394,
 	}
 
-	buf := &bytes.Buffer{}
-	assert.Nil(t, h.EncodeBinary(buf))
+	tx := Transaction{
+		Data: []byte("foo"),
+	}
 
-	hDecode := &Header{}
-	assert.Nil(t, hDecode.DecodeBinary(buf))
-	assert.Equal(t,h,hDecode)
+	return  NewBlock(header, []Transaction{tx})
 }
 
+func TestHashBlock(t *testing.T) {
+	b := randomBlock(0)
 
-func TestBlock_Encode_Decode(t *testing.T) {
-	b := &Block {
-		Header: Header{
-			Version: 1,
-			PrevBlock: types.RandomHash(),
-			Timestamp: uint64(time.Now().UnixNano()),
-			Height: 10,
-			Nonce: 989394,
-		},
-		Transactions: nil,
-	}
-
-	buf := &bytes.Buffer{}
-	assert.Nil(t, b.EncodeBinary(buf))
-
-	bDecode := &Block{}
-	assert.Nil(t, bDecode.DecodeBinary(buf))
-	assert.Equal(t, b, bDecode)
-
+	fmt.Println(b.Hash(BlockHasher{}))
 }
 
-func TestBlockHash(t *testing.T) {
-	b := &Block{
-		Header: Header {
-			Version: 1,
-			PrevBlock: types.RandomHash(),
-			Timestamp: uint64(time.Now().UnixNano()),
-			Height: 10,
-			Nonce: 989394,
-		},
-		Transactions: []Transaction{
+func TestSignBlock(t *testing.T) {
+	privKey := crypto.GeneratePrivateKey()
+	b := randomBlock(0)
+	assert.Nil(t, b.Sign(privKey))
+	assert.NotNil(t, b.Signature)
+}
 
-		},
-	}
+func TestVerifyBlock(t *testing.T) {
+	privKey := crypto.GeneratePrivateKey()
+	b := randomBlock(0)
+	assert.Nil(t, b.Sign(privKey))
+	// assert.NotNil(t, b.Signature)
+	assert.Nil(t, b.Verify())
 
-	h := b.Hash()
-	fmt.Println(h)
-	assert.False(t, h.IsZero())
+	otherPrivKey := crypto.GeneratePrivateKey()
+	b.Validator = otherPrivKey.PublicKey()
+	assert.NotNil(t, b.Verify())
+
+	b.Height = 100
+	assert.NotNil(t, b.Verify())
 }
