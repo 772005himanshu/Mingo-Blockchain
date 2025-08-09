@@ -18,3 +18,12 @@ func (BlockHasher) Hash(b *Header) types.Hash {
 	return types.Hash(h)
 
 }
+
+type TxHasher struct {
+
+}
+
+
+func (TxHasher) Hash(tx *Transaction) types.Hash {
+	return types.Hash(sha256.Sum256(tx.Data))
+}

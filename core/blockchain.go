@@ -1,12 +1,15 @@
 package core 
 
+import "sync"
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 )
 
 type Blockchain struct {
+	// Distributed System this need to thread safe -> we can add the mutex or construct something mechanism (avoiding  the mutex by using the channels)
 	store Storage  // this storage would contains complete blocks of the transactions
+	lock sync.RwMutex
 	headers []*Header // list of the slice if points to headers , we make the list in the memeory cheap and easy to retrive through it -> Ram is cheap
 	validator Validator
 }
@@ -42,7 +45,9 @@ func (bc *Blockchain) GetHeader(height uint32) (*Header, error ) {
 	if height > bc.Height() {
 		return nil, fmt.Errorf("given height (%d) too high" , height)
 	}
-	return bc.headers[height] , nil
+	bc.lock.Lock()
+	defer bc.lock.Unlock()
+	return bc.headers[height] , nil  // We are going to grab the header from the list 
 }
 
 func (bc *Blockchain) HasBlock(height uint32) bool {
@@ -52,18 +57,21 @@ func (bc *Blockchain) HasBlock(height uint32) bool {
 // [0,1,2,3] -> 4 len
 // [0,1,2,3] -> 3 Height
 func (bc *Blockchain) Height() uint32 {
+	bc.lock.RLock()
+	defer bc.lock.RUnLock()
 	return uint32(len(bc.headers) - 1)
 }
 
 func (bc *Blockchain) addBlockWithoutValidation(b *Block) error {
-
+	bc.lock.Lock()
 	bc.headers = append(bc.headers, b.Header)
+	bc.lock.Unlock()
 
 	logrus.WithFields(logrus.Fields{
 		"height": b.Height,
 		"hash": b.Hash(BlockHasher{}),
 	}) // whats is this used for ?
-	return bc.store.Put(b)
+	return bc.store.Put(b) // put the block in the Storage 
 }
 
 

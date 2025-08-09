@@ -56,7 +56,7 @@ func TestGetHeader(t *testing.T) {
 
 func TestAddBlockToHigh(t *testing.T) {
 	bc := newBlockchainWithGensis(t)
-	assert.Nil(t, bc.AddBlock(randomBlockWithSignature(t, 1, getPrevBlockHash(t, bc, uint32(1)))))
+	assert.Nil(t, bc.AddBlock(randomBlockWithSignature(t, 1, getPrevBlockHash(t, bc, uint32(1))))) // getPrevBlockHash expect the Height of the PrevBlock
 	assert.NotNil(t, bc.AddBlock(randomBlockWithSignature(t, 3,types.Hash{})))
 } 
 

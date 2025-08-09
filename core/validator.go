@@ -4,6 +4,8 @@ import (
 	"fmt"
 )
 
+// Validator Construct the Block and propose them to the network 
+
 // why the interface we can mock it for the testing 
 type Validator interface {
 	ValidateBlock(*Block) error // we donot know what we are validating 
