@@ -7,6 +7,7 @@ import (
 	"github.com/772005himanshu/Mingo-Blockchain/types"
 )
 
+// Only the Public Value to be encoded in the Transactions
 type Transaction struct {
 	Data []byte
 
@@ -16,6 +17,9 @@ type Transaction struct {
 
 	// cached version of the tx data hash
 	hash types.Hash
+
+	// first Seen is the Timestamp of when this tx is first seen locally 
+	firstSeen int64
 }
 
 func NewTransaction(data []byte) *Transaction {
@@ -54,4 +58,22 @@ func (tx *Transaction) Verify() error {
 	}
 
 	return nil
+}
+
+
+func (tx *Transaction) Decode(dec Decoder[*Transaction]) error {
+	return dec.Decode(tx)
+}
+
+func (tx *Transaction) Encode(enc Encoder[*Transaction]) error {
+	return enc.Encode(tx)
+}
+
+func (tx *Transaction) SetFirstSeen(t int64) {
+	tx.firstSeen = t
+}
+
+
+func (tx *Transaction) FirstSeen() int64 {
+	return tx.firstSeen
 }

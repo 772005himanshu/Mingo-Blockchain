@@ -4,6 +4,7 @@ import (
 	"testing"
 	"github.com/772005himanshu/Mingo-Blockchain/crypto"
 	"github.com/stretchr/testify/assert"
+	"bytes"
 )
 
 func TestSignTransaction(t *testing.T) {
@@ -31,6 +32,17 @@ func TestVerifyTransaction(t *testing.T) {
 
 	assert.NotNil(t, tx.Verify())
 }
+
+
+func TestTxEncodeDecode(t *testing.T) {
+	tx := randomTxWithSignature(t)
+	buf := &bytes.Buffer{}
+	assert.Nil(t, tx.Encode(NewGobTxEncoder(buf)))
+
+	txDecoded := new(Transaction)
+	assert.Nil(t, txDecoded.Decode(NewGobTxDecoder(buf)))
+	assert.Equal(t, tx, txDecoded)
+} 
 
 func randomTxWithSignature(t *testing.T) *Transaction {
 	privKey := crypto.GeneratePrivateKey()
