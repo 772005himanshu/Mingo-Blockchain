@@ -1,15 +1,16 @@
 package core 
 
-import "sync"
 import (
 	"fmt"
+	"sync"
 	"github.com/sirupsen/logrus"
+	
 )
 
 type Blockchain struct {
 	// Distributed System this need to thread safe -> we can add the mutex or construct something mechanism (avoiding  the mutex by using the channels)
 	store Storage  // this storage would contains complete blocks of the transactions
-	lock sync.RwMutex
+	lock sync.RWMutex
 	headers []*Header // list of the slice if points to headers , we make the list in the memeory cheap and easy to retrive through it -> Ram is cheap
 	validator Validator
 }
@@ -58,7 +59,7 @@ func (bc *Blockchain) HasBlock(height uint32) bool {
 // [0,1,2,3] -> 3 Height
 func (bc *Blockchain) Height() uint32 {
 	bc.lock.RLock()
-	defer bc.lock.RUnLock()
+	defer bc.lock.RUnlock()
 	return uint32(len(bc.headers) - 1)
 }
 

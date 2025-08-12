@@ -3,6 +3,7 @@ package network
 import (
 	"github.com/772005himanshu/Mingo-Blockchain/core"
 	"github.com/772005himanshu/Mingo-Blockchain/types"
+	"sort"
 )
 
 
@@ -19,9 +20,11 @@ func NewTxMapSorter(txMap map[types.Hash]*core.Transaction) *TxMapSorter {
 		i++
 	}
 
-	s := &TxMapSorter(txx)
+	s := &TxMapSorter{txx}
 
 	sort.Sort(s)
+
+	return s
 }
 
 func (s *TxMapSorter) Len() int {
@@ -74,4 +77,4 @@ func (p *TxPool) Len() int {
 
 func (p *TxPool) Flush() {
 	p.transactions = make(map[types.Hash]*core.Transaction)
-} // make a New tx Pool by defining the new map 
+} // make a New tx Pool by defining the new map or delete old one 

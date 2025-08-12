@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCoonnect(t *testing.T) {
+func TestConnect(t *testing.T) {
 	tra := NewLocalTransport("A")
 	trb := NewLocalTransport("B")
 
@@ -27,7 +27,14 @@ func TestSendMessage(t *testing.T) {
 	msg := []byte("Hello world")
 	assert.Nil(t, tra.SendMessage(trb.addr, msg))
 
-	rpc := <-trb.Consume() // Comsuming the Channel from the trb to Rpc
+	rpc := <-trb.Consume()  // Comsuming the Channel from the trb to Rpc
+	buf := make([]byte, len(msg))
+	n, err := rpc.Payload.Read(buf)
+	assert.Nil(t, err)
+	assert.Equal(t, n , len(msg))
+
+
+
 	assert.Equal(t, rpc.Payload, msg)
 	assert.Equal(t, rpc.From, tra.addr)
 }
