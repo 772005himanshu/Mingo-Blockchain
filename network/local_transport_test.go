@@ -2,6 +2,7 @@ package network
 
 import (
 	"testing"
+	
 
 	"github.com/stretchr/testify/assert"
 )
@@ -28,13 +29,32 @@ func TestSendMessage(t *testing.T) {
 	assert.Nil(t, tra.SendMessage(trb.addr, msg))
 
 	rpc := <-trb.Consume()  // Comsuming the Channel from the trb to Rpc
-	buf := make([]byte, len(msg))
-	n, err := rpc.Payload.Read(buf)
-	assert.Nil(t, err)
-	assert.Equal(t, n , len(msg))
-
-
-
-	assert.Equal(t, rpc.Payload, msg)
+	b , err := ioutil.ReadAll(rpc.Payload)
+	assert.Nil(t,err)
+	assert.Equal(t, b, msg)
 	assert.Equal(t, rpc.From, tra.addr)
 }
+
+
+func TestBroadcast(t *testing.T) {
+	tra := NewLocalTransport("A")
+	trb := NewLocalTransport("B")
+	trc := NewLocalTransport("C")
+
+	tra.Connect(trb)
+	trb.Connect(trc)
+
+	msg := []byte("foo")
+	assert.Nil(t, tra.Broadcast(msg))
+
+	rpcb := <- trb.Consume()
+	b , err := ioutil.ReadAll(rpcb.Payload)
+	assert.Nil(t,err)
+	assert.Equal(t, b, msg)
+
+	rpcc := <- trb.Consume()
+	c , err := ioutil.ReadAll(rpcc.Payload)
+	assert.Nil(t,err)
+	assert.Equal(t, c, msg)
+
+} 

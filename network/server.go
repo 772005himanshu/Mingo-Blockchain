@@ -3,6 +3,7 @@ package network
 import (
 	"fmt"
 	"time"
+	"bytes"
 	"github.com/772005himanshu/Mingo-Blockchain/crypto"
 	"github.com/772005himanshu/Mingo-Blockchain/core"
 	"github.com/sirupsen/logrus"
@@ -12,15 +13,15 @@ import (
 var defaultBlockTime = 5 * time.Second
 
 type ServerOpts struct {
-	RPCHandler RPCHandler 
-	Transports []Transport
+	RPCDecodeFunc   RPCDecodeFunc
+	RPCProcessor RPCProcessor
+ 	Transports []Transport
 	BlockTime time.Duration
 	PrivateKey *crypto.PrivateKey
 } // this can be used as the Block explorer and wallet and passage to the tx go through it 
 
 type Server struct { // This Behaves as the validator and they also participate in the consensus
 	ServerOpts
-	blockTime  time.Duration
 	memPool *TxPool
 	isValidator bool
 	rpcCh  chan RPC
@@ -31,20 +32,24 @@ func NewServer(opts ServerOpts) *Server {
 	if opts.BlockTime == time.Duration(0) {
 		opts.BlockTime = defaultBlockTime 
 	}
+
+	if opts.RPCDecodeFunc == nil {
+		opts.RPCDecodeFunc = DefaultRPCDecodeFunc
+	}
+	
 	s := &Server{
 		ServerOpts: opts,
-		blockTime : opts.BlockTime,
 		memPool: NewTxPool(),
 		isValidator: opts.PrivateKey != nil, // this simply means that if you have the private key then you are validtor , if not you are not the validator 
 		rpcCh:      make(chan RPC),
 		quitCh:     make(chan struct{}, 1),
 	}
 
-	if opts.RPCHandler == nil {
-		opts.RPCHandler = NewDefaultRPCHandler(s)
+	// If we donot got any processor from the server options , we going to user
+	// the server as default
+	if s.RPCProcessor == nil {
+		s.RPCProcessor = s
 	}
-
-	s.ServerOpts = opts
 
 	return s
 
@@ -52,13 +57,18 @@ func NewServer(opts ServerOpts) *Server {
 
 func (s *Server) Start() {
 	s.initTransports()
-	ticker := time.NewTicker(s.blockTime)
+	ticker := time.NewTicker(s.BlockTime)
 
 free:
 	for {
 		select {
 		case rpc := <-s.rpcCh: // self rpc
-		    if err := s.RPCHandler.HandleRPC(rpc); err != nil {
+		    msg, err := s.RPCDecodeFunc(rpc)
+			if err != nil {
+				logrus.Error(err)
+			}
+
+			if err := s.RPCProcessor.ProcessMessage(msg); err != nil {
 				logrus.Error(err)
 			}
 		case <-s.quitCh: // do i need to quit the rpc channel
@@ -75,7 +85,28 @@ free:
 	fmt.Println("Server shutdown")
 }
 
-func (s *Server) ProcessTransaction(from NetAddr, tx *core.Transaction) error {
+func (s *Server) ProcessMessage(msg *DecodedMessage) error {
+
+	switch t := msg.Data.(type) {
+	case *core.Transaction:
+		return s.processTransaction(t)
+	}
+
+	return nil
+}
+
+
+func (s *Server) broadcast(msg []byte) error {
+	for _, tr := range s.Transports {
+		if err := tr.Broadcast(payload); err != nil {
+			return err
+		}
+	}
+
+	return nil
+} 
+
+func (s *Server) processTransaction(tx *core.Transaction) error {
 
 	hash := tx.Hash(core.TxHasher{})
 
@@ -99,8 +130,21 @@ func (s *Server) ProcessTransaction(from NetAddr, tx *core.Transaction) error {
 	}).Info("adding new tx to the mempool")
 
 	// TODO : broadcast this tx to peers
+	go s.broadcastTx(tx)
 	
 	return s.memPool.Add(tx)
+}
+
+
+func (s *Server) broadcastTx(tx *core.Transaction) error {
+	buf := &bytes.Buffer{}
+	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
+		return err
+	}
+
+	msg := NewMessage(MessageTypeTx, buf.Bytes())
+
+	return s.broadcast(msg.Bytes())
 }
 
 func (s *Server) createNewBlock() error {
