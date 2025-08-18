@@ -49,6 +49,14 @@ func main() {
 }
 
 
+func makeServer(id string, tr network.Transport, privKey *crypto.PrivateKey) *network.Server {
+	opts := network.ServerOpts{
+		PrivateKey: privKey,
+		ID: id,
+		Transports: []network.Transport(tr),
+	}
+}
+
 func sendTransaction(tr network.Transport, to network.NetAddr) error  {
 	privKey := crypto.GeneratePrivateKey()
 	data := []byte(strconv.FormatInt(int64(rand.Intn(1000)), 10))

@@ -30,7 +30,7 @@ func (h *Header) Bytes() []byte {
 
 type Block struct {
 	*Header  // it is copied version of the Header -> the * reason behind this we donot maintain the copy of the Header , we want to maintain  a list of the pointers
-	Transactions []Transaction
+	Transactions []*Transaction
 	Validator crypto.PublicKey
 	Signature *crypto.Signature
 
@@ -38,14 +38,14 @@ type Block struct {
 	hash types.Hash
 }
 
-func NewBlock(h *Header,tx []Transaction) (*Block, error ){
+func NewBlock(h *Header,txx []*Transaction) (*Block, error ){
 	return &Block{
 		Header: h,
-		Transactions: tx,
+		Transactions: txx,
 	}, nil
 }
 
-func NewBlockFormPrevHeader(prevHeader *Header, txx []Transaction) (*Block, error) {
+func NewBlockFormPrevHeader(prevHeader *Header, txx []*Transaction) (*Block, error) {
 	dataHash, err := CalculateDataHash(txx)
 	if err != nil {
 		return nil, err
@@ -62,14 +62,14 @@ func NewBlockFormPrevHeader(prevHeader *Header, txx []Transaction) (*Block, erro
 }
 
 func (b *Block) AddTransaction(tx *Transaction) {
-	b.Transactions = append(b.Transactions, *tx)
+	b.Transactions = append(b.Transactions, tx)
 }
 
 
-func (b *Block) Sign(privKey crypto.PrivateKey) *crypto.Signature {
+func (b *Block) Sign(privKey crypto.PrivateKey) error  {
 	sig , err := privKey.Sign(b.Header.Bytes())
 	if err != nil {
-		return nil // The signature is embedded in the Block then return the error , not the panic
+		return err // The signature is embedded in the Block then return the error , not the panic
 	}
 
 	b.Validator = privKey.PublicKey()
@@ -120,7 +120,7 @@ func (b *Block) Hash(hasher Hasher[*Header] ) types.Hash {
 	return b.hash
 }
 
-func CalculateDataHash(txx []Transaction) (hash types.Hash, err error) {
+func CalculateDataHash(txx []*Transaction) (hash types.Hash, err error) {
 	var (
 		buf = &bytes.Buffer{}
 	)

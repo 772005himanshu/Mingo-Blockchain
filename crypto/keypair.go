@@ -57,7 +57,7 @@ func (k PublicKey) Address() types.Address {
 }
 
 type Signature struct {
-	R, S *big.Int
+	S, R *big.Int
 }
 
 func (sig Signature) Verify(pubKey PublicKey, data []byte) bool {

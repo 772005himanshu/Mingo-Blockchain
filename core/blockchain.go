@@ -3,11 +3,12 @@ package core
 import (
 	"fmt"
 	"sync"
-	"github.com/sirupsen/logrus"
+	"github.com/go-kit/log"
 	
 )
 
 type Blockchain struct {
+	logger log.Logger
 	// Distributed System this need to thread safe -> we can add the mutex or construct something mechanism (avoiding  the mutex by using the channels)
 	store Storage  // this storage would contains complete blocks of the transactions
 	lock sync.RWMutex
@@ -15,10 +16,11 @@ type Blockchain struct {
 	validator Validator
 }
 
-func NewBlockchain(genesis *Block) (*Blockchain, error) {
+func NewBlockchain(l log.Logger, genesis *Block) (*Blockchain, error) {
 	bc := &Blockchain {
 		headers: []*Header{},
 		store : NewMemoryStore(),
+		logger: l,
 	}
 
 	bc.validator = NewBlockValidator(bc) // validator should be constructed from the config file
@@ -68,10 +70,13 @@ func (bc *Blockchain) addBlockWithoutValidation(b *Block) error {
 	bc.headers = append(bc.headers, b.Header)
 	bc.lock.Unlock()
 
-	logrus.WithFields(logrus.Fields{
-		"height": b.Height,
-		"hash": b.Hash(BlockHasher{}),
-	}) // whats is this used for ?
+	bc.logger.Log(
+		"msg", "new block",
+		"hash" , b.Hash(BlockHasher{}),
+		"height", b.Height,
+		"transactions", len(b.Transactions),
+	)
+	
 	return bc.store.Put(b) // put the block in the Storage 
 }
 
