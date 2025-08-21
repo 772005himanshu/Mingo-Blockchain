@@ -3,7 +3,6 @@ package core
 import (
 	"bytes"
 	"encoding/gob"
-	"io"
 	"time"
 	"fmt"
 	"crypto/sha256"
@@ -45,7 +44,7 @@ func NewBlock(h *Header,txx []*Transaction) (*Block, error ){
 	}, nil
 }
 
-func NewBlockFormPrevHeader(prevHeader *Header, txx []*Transaction) (*Block, error) {
+func NewBlockFromPrevHeader(prevHeader *Header, txx []*Transaction) (*Block, error) {
 	dataHash, err := CalculateDataHash(txx)
 	if err != nil {
 		return nil, err
@@ -104,11 +103,11 @@ func (b *Block) Verify() error {
 	return nil
 }
 
-func (b *Block) Decode(r io.Reader, dec Decoder[*Block]) error {
+func (b *Block) Decode(dec Decoder[*Block]) error {
 	return dec.Decode(b)
 }
 
-func (b *Block) Encode(w io.Writer, enc Encoder[*Block]) error {
+func (b *Block) Encode(enc Encoder[*Block]) error {
 	return enc.Encode(b)
 }
 

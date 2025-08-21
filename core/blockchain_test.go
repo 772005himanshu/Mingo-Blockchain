@@ -2,9 +2,9 @@ package core
 
 import (
 	"testing"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/772005himanshu/Mingo-Blockchain/types"
+	"github.com/go-kit/log"
 )
 
 
@@ -29,15 +29,14 @@ func TestNewBlockchain(t *testing.T) {
 	bc := newBlockchainWithGensis(t)
 	assert.NotNil(t, bc.validator )
 	assert.Equal(t, bc.Height(), uint32(0))
-
-	fmt.Println(bc.Height())
 }
 
 
 func TestHasBlock(t *testing.T) {
 	bc := newBlockchainWithGensis(t)
 	assert.True(t, bc.HasBlock(0))
-	assert.True(t, bc.HasBlock(1))
+	assert.False(t, bc.HasBlock(1))
+	assert.False(t, bc.HasBlock(100))
 }
 
 func TestGetHeader(t *testing.T) {
@@ -61,7 +60,7 @@ func TestAddBlockToHigh(t *testing.T) {
 } 
 
 func newBlockchainWithGensis(t *testing.T) *Blockchain {
-	bc , err := NewBlockchain(randomBlock(t,0, types.Hash{}))
+	bc , err := NewBlockchain(log.NewNopLogger(),randomBlock(t,0, types.Hash{}))
 	assert.Nil(t, err)
 
 	return bc

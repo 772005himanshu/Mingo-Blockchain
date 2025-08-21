@@ -19,9 +19,7 @@ func (BlockHasher) Hash(b *Header) types.Hash {
 
 }
 
-type TxHasher struct {
-
-}
+type TxHasher struct {}
 
 
 func (TxHasher) Hash(tx *Transaction) types.Hash {

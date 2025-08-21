@@ -1,11 +1,9 @@
 package network
 
-// Transport Should be Connecting it to the peers to track them
-
 import (
+	"bytes"
 	"fmt"
 	"sync"
-	"bytes"
 )
 
 type LocalTransport struct {
@@ -15,7 +13,7 @@ type LocalTransport struct {
 	peers     map[NetAddr]*LocalTransport
 }
 
-func NewLocalTransport(addr NetAddr) Transport {
+func NewLocalTransport(addr NetAddr) *LocalTransport {
 	return &LocalTransport{
 		addr:      addr,
 		consumeCh: make(chan RPC, 1024),
@@ -43,7 +41,7 @@ func (t *LocalTransport) SendMessage(to NetAddr, payload []byte) error {
 
 	peer, ok := t.peers[to]
 	if !ok {
-		return fmt.Errorf("could not send message to %s", to)
+		return fmt.Errorf("%s: could not send message to unknown peer %s", t.addr, to)
 	}
 
 	peer.consumeCh <- RPC{
@@ -60,7 +58,6 @@ func (t *LocalTransport) Broadcast(payload []byte) error {
 			return err
 		}
 	}
-
 	return nil
 }
 

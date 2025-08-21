@@ -48,8 +48,8 @@ func (bc *Blockchain) GetHeader(height uint32) (*Header, error ) {
 	if height > bc.Height() {
 		return nil, fmt.Errorf("given height (%d) too high" , height)
 	}
-	bc.lock.Lock()
-	defer bc.lock.Unlock()
+	bc.lock.Lock() // what is the use of this lock here
+	defer bc.lock.Unlock() // then on next there is unlock
 	return bc.headers[height] , nil  // We are going to grab the header from the list 
 }
 
@@ -62,6 +62,7 @@ func (bc *Blockchain) HasBlock(height uint32) bool {
 func (bc *Blockchain) Height() uint32 {
 	bc.lock.RLock()
 	defer bc.lock.RUnlock()
+	
 	return uint32(len(bc.headers) - 1)
 }
 

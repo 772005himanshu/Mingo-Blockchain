@@ -7,9 +7,10 @@ import (
 	"github.com/772005himanshu/Mingo-Blockchain/types"
 	"time"
 	"fmt"
+	"bytes"
 )
 
-
+// Handler Functionality
 func randomBlock(t *testing.T, height uint32, prevBlockHash types.Hash) *Block {
 	privKey := crypto.GeneratePrivateKey()
 	tx := randomTxWithSignature(t)
@@ -58,4 +59,12 @@ func TestVerifyBlock(t *testing.T, prevBlockHash types.Hash) {
 	assert.NotNil(t, b.Verify())
 }
 
+func TestDecodeEncodeBlock(t *testing.T) {
+	b := randomBlock(t, 1, types.Hash{})
+	buf := &bytes.Buffer{}
+	assert.Nil(t, b.Encode(NewGobBlockEncoder(buf)))
 
+	bDecode := new(Block)
+	assert.Nil(t, bDecode.Decode(NewGobBlockDecoder(buf)))
+	assert.Nil(t, b, bDecode)
+}

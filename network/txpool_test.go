@@ -1,49 +1,107 @@
-package network 
+package network
 
 import (
 	"testing"
-	"github.com/stretchr/testify/assert"
+
 	"github.com/772005himanshu/Mingo-Blockchain/core"
-	"strconv"
-	"math/rand"
+	"github.com/772005himanshu/Mingo-Blockchain/util"
+	"github.com/stretchr/testify/assert"
 )
 
+func TestTxMaxLength(t *testing.T) {
+	p := NewTxPool(1)
+	p.Add(util.NewRandomTransaction(10))
+	assert.Equal(t, 1, p.all.Count())
 
-func TestTxPool(t *testing.T) {
-	p := NewTxPool()
-	assert.Equal(t, p.Len(), 0)
+	p.Add(util.NewRandomTransaction(10))
+	p.Add(util.NewRandomTransaction(10))
+	p.Add(util.NewRandomTransaction(10))
+	tx := util.NewRandomTransaction(100)
+	p.Add(tx)
+	assert.Equal(t, 1, p.all.Count())
+	assert.True(t, p.Contains(tx.Hash(core.TxHasher{})))
 }
 
+func TestTxPoolAdd(t *testing.T) {
+	p := NewTxPool(11)
+	n := 10
 
-func TestTxPoolAddTx(t *testing.T) {
-	p := NewTxPool()
-	tx := core.NewTransaction([]byte("foo"))
-	assert.Nil(t, p.Add(tx))
-	assert.Equal(t, p.Len(), 1)
+	for i := 1; i <= n; i++ {
+		tx := util.NewRandomTransaction(100)
+		p.Add(tx)
+		// cannot add twice
+		p.Add(tx)
 
-	_ = core.NewTransaction([]byte("foo"))
-	assert.Equal(t, p.Len(), 1)
-
-	p.Flush()
-	assert.Equal(t, p.Len(), 0)
-}
-
-
-func TestSortTransactions(t *testing.T) {
-	p := NewTxPool()
-	txLen := 1000
-
-	for i := 0 ; i< txLen; i++ {
-		tx := core.NewTransaction([]byte(strconv.FormatInt(int64(i) , 10)))  // if we pass the same tx again and again this should be count as the one(Becasue the Hash of tx is the same ) in the TX POOL
-		tx.SetFirstSeen(int64(i * rand.Intn(1000)))  // Intn is in the Math library
-		assert.Nil(t, p.Add(tx))
-	} // If we are passing the 1000 tx in the txPool there should be 1000 tx in the TX Pool
-
-	assert.Equal(t, txLen, p.Len())
-
-	txx := p.transactions
-	for i := 0; i< len(txx) - 1; i++ {
-		assert.True(t, txx[i].FirstSeen() < txx[i + 1].FirstSeen())
+		assert.Equal(t, i, p.PendingCount())
+		assert.Equal(t, i, p.pending.Count())
+		assert.Equal(t, i, p.all.Count())
 	}
-	
+}
+
+func TestTxPoolMaxLength(t *testing.T) {
+	maxLen := 10
+	p := NewTxPool(maxLen)
+	n := 100
+	txx := []*core.Transaction{}
+
+	for i := 0; i < n; i++ {
+		tx := util.NewRandomTransaction(100)
+		p.Add(tx)
+
+		if i > n-(maxLen+1) {
+			txx = append(txx, tx)
+		}
+	}
+
+	assert.Equal(t, p.all.Count(), maxLen)
+	assert.Equal(t, len(txx), maxLen)
+
+	for _, tx := range txx {
+		assert.True(t, p.Contains(tx.Hash(core.TxHasher{})))
+	}
+}
+
+func TestTxSortedMapFirst(t *testing.T) {
+	m := NewTxSortedMap()
+	first := util.NewRandomTransaction(100)
+	m.Add(first)
+	m.Add(util.NewRandomTransaction(10))
+	m.Add(util.NewRandomTransaction(10))
+	m.Add(util.NewRandomTransaction(10))
+	m.Add(util.NewRandomTransaction(10))
+	assert.Equal(t, first, m.First())
+}
+
+func TestTxSortedMapAdd(t *testing.T) {
+	m := NewTxSortedMap()
+	n := 100
+
+	for i := 0; i < n; i++ {
+		tx := util.NewRandomTransaction(100)
+		m.Add(tx)
+		// cannot add the same twice
+		m.Add(tx)
+
+		assert.Equal(t, m.Count(), i+1)
+		assert.True(t, m.Contains(tx.Hash(core.TxHasher{})))
+		assert.Equal(t, len(m.lookup), m.txx.Len())
+		assert.Equal(t, m.Get(tx.Hash(core.TxHasher{})), tx)
+	}
+
+	m.Clear()
+	assert.Equal(t, m.Count(), 0)
+	assert.Equal(t, len(m.lookup), 0)
+	assert.Equal(t, m.txx.Len(), 0)
+}
+
+func TestTxSortedMapRemove(t *testing.T) {
+	m := NewTxSortedMap()
+
+	tx := util.NewRandomTransaction(100)
+	m.Add(tx)
+	assert.Equal(t, m.Count(), 1)
+
+	m.Remove(tx.Hash(core.TxHasher{}))
+	assert.Equal(t, m.Count(), 0)
+	assert.False(t, m.Contains(tx.Hash(core.TxHasher{})))
 }
