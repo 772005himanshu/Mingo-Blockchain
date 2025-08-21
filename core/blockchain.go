@@ -40,6 +40,17 @@ func (bc *Blockchain) AddBlock(b *Block) error {
 		return err
 	}
 
+	// Run the VM Code we gonna use it 
+	for _, tx := range b.Transactions {
+		bc.logger.Log("msg", "executing code","len", len(tx.Data) , "hash", tx.Hash(&TxHasher{}))
+		vm := NewVM(tx.Data)
+		if err := vm.Run(); err != nil {
+			return err
+		}
+
+		bc.logger.Log("vm Result", vm.stack[vm.sp])
+	}
+
 	return bc.addBlockWithoutValidation(b)
 }
 
@@ -62,7 +73,7 @@ func (bc *Blockchain) HasBlock(height uint32) bool {
 func (bc *Blockchain) Height() uint32 {
 	bc.lock.RLock()
 	defer bc.lock.RUnlock()
-	
+
 	return uint32(len(bc.headers) - 1)
 }
 
