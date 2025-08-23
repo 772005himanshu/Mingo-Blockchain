@@ -14,10 +14,13 @@ type Blockchain struct {
 	lock sync.RWMutex
 	headers []*Header // list of the slice if points to headers , we make the list in the memeory cheap and easy to retrive through it -> Ram is cheap
 	validator Validator
+	contractState *State  // Make it as interface
 }
 
 func NewBlockchain(l log.Logger, genesis *Block) (*Blockchain, error) {
+
 	bc := &Blockchain {
+		contractState: NewState(),  // a special account to store the state os the Contract
 		headers: []*Header{},
 		store : NewMemoryStore(),
 		logger: l,
@@ -43,12 +46,17 @@ func (bc *Blockchain) AddBlock(b *Block) error {
 	// Run the VM Code we gonna use it 
 	for _, tx := range b.Transactions {
 		bc.logger.Log("msg", "executing code","len", len(tx.Data) , "hash", tx.Hash(&TxHasher{}))
-		vm := NewVM(tx.Data)
+
+		vm := NewVM(tx.Data, bc.contractState)
 		if err := vm.Run(); err != nil {
 			return err
 		}
 
-		bc.logger.Log("vm Result", vm.stack[vm.sp])
+		fmt.Printf("STATE: %+v\n", vm.contractState)
+
+
+		result := vm.stack.Pop()
+		fmt.Printf("VM Result: %+v\n", result)
 	}
 
 	return bc.addBlockWithoutValidation(b)

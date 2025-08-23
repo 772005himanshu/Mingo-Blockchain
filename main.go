@@ -3,11 +3,8 @@ package main
 import (
 	"bytes"
 	"log"
-	"math/rand"
-	"strconv"
 	"fmt"
 	"time"
-
 	"github.com/772005himanshu/Mingo-Blockchain/core"
 	"github.com/772005himanshu/Mingo-Blockchain/crypto"
 	"github.com/772005himanshu/Mingo-Blockchain/network"
@@ -105,8 +102,8 @@ func makeServer(id string, tr network.Transport, privKey *crypto.PrivateKey) *ne
 
 func sendTransaction(tr network.Transport, to network.NetAddr) error {
 	privKey := crypto.GeneratePrivateKey()
-	data := []byte{0x01, 0x0a ,  0x02, 0x0a , 0x0b}
-	tx := core.NewTransaction(data)
+
+	tx := core.NewTransaction(contract())
 	tx.Sign(privKey)
 	buf := &bytes.Buffer{}
 	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
@@ -116,4 +113,13 @@ func sendTransaction(tr network.Transport, to network.NetAddr) error {
 	msg := network.NewMessage(network.MessageTypeTx, buf.Bytes())
 
 	return tr.SendMessage(to, msg.Bytes())
+}
+
+func contract() []byte {
+	data := []byte{0x02 , 0x0a, 0x03, 0x0a, 0x0b, 0x4f, 0x0c, 0x4f, 0x0c, 0x46, 0x0c, 0x03, 0x0a, 0x0d, 0x0f}  // just the pushing from the front Reverse order that we start from 
+	pushFoo := []byte{0x4f, 0x0c, 0x4f, 0x0c, 0x46, 0x0c ,0x03, 0x0a, 0x0d, 0xae}
+	// F O O => Pack[F O O]
+
+	data = append(data, pushFoo...)
+	return data
 }

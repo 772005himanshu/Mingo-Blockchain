@@ -236,3 +236,7 @@ func genesisBlock() *core.Block {
 	b, _ := core.NewBlock(header, nil)
 	return b
 }
+
+// Hoe we are going to sync the nodes 
+// When we boot up the node the seeds node -> that means that the  boot node is going to connect with the Seed nodes like that the idea behind this
+// checking the version of the node we are going to connect with only connect with node having the same version
