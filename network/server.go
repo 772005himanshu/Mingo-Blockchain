@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"time"
+	"fmt"
 
 	"github.com/772005himanshu/Mingo-Blockchain/core"
 	"github.com/772005himanshu/Mingo-Blockchain/crypto"
@@ -67,6 +68,10 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		go s.validatorLoop()
 	}
 
+	for _, tr := range s.Transports {
+		s.sendGetStatusMessage(tr)
+	}
+
 	return s, nil
 }
 
@@ -111,8 +116,17 @@ func (s *Server) ProcessMessage(msg *DecodedMessage) error {
 		return s.processTransaction(t)
 	case *core.Block:
 		return s.processBlock(t)
+	
+	case *StatusMessage:
+		return s.processStatusMessage(msg.From, t)
+
 	}
 
+	return nil
+}
+
+func (s *Server) sendGetStatusMessage(t Transport) error {
+	
 	return nil
 }
 
@@ -124,6 +138,12 @@ func (s *Server) broadcast(payload []byte) error {
 	}
 	return nil
 }
+
+func (s *Server) processStatusMessage(from NetAddr,msg *StatusMessage) error {
+	fmt.Printf("received status msg from %s => %+v\n", from , msg)
+
+	return nil
+} 
 
 func (s *Server) processBlock(b *core.Block) error {
 	if err := s.chain.AddBlock(b); err != nil {
@@ -237,6 +257,6 @@ func genesisBlock() *core.Block {
 	return b
 }
 
-// Hoe we are going to sync the nodes 
+// How we are going to sync the nodes 
 // When we boot up the node the seeds node -> that means that the  boot node is going to connect with the Seed nodes like that the idea behind this
 // checking the version of the node we are going to connect with only connect with node having the same version

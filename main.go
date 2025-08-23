@@ -123,3 +123,4 @@ func contract() []byte {
 	data = append(data, pushFoo...)
 	return data
 }
+
