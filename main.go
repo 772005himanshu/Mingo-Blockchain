@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"log"
 	"fmt"
+	"encoding/gob"
 	"time"
 	"github.com/772005himanshu/Mingo-Blockchain/core"
 	"github.com/772005himanshu/Mingo-Blockchain/crypto"
@@ -56,6 +57,7 @@ func main() {
 
 	trLocal.Connect(trRemoteA)
 	trRemoteA.Connect(trRemoteB)
+	trRemoteB.Connect(trRemoteA)
 	trRemoteB.Connect(trRemoteC)
 	trRemoteA.Connect(trLocal)
 
@@ -87,6 +89,7 @@ func initRemoteServer(trs []network.Transport) {
 
 func makeServer(id string, tr network.Transport, privKey *crypto.PrivateKey) *network.Server {
 	opts := network.ServerOpts{
+		Transport : tr,
 		PrivateKey: privKey,
 		ID:         id,
 		Transports: []network.Transport{tr},
@@ -99,6 +102,22 @@ func makeServer(id string, tr network.Transport, privKey *crypto.PrivateKey) *ne
 
 	return s
 }
+func sendGetStatusMessage(tr network.Transport, to network.NetAddr) error {
+	var (
+		getStatusMsg = new(network.GetStatusMessage)
+		buf = new(bytes.Buffer)
+	)
+
+	if err := gob.NewEncoder(buf).Encode(getStatusMsg); err != nil {
+		return err
+	}
+
+	msg := network.NewMessage(network.MessageTypeGetStatus, buf.Bytes())
+
+	return tr.SendMessage(to,msg.Bytes())
+
+}
+
 
 func sendTransaction(tr network.Transport, to network.NetAddr) error {
 	privKey := crypto.GeneratePrivateKey()
