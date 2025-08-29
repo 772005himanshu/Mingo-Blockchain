@@ -1,8 +1,11 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 )
+
+var ErrBlockKnown = errors.New("block already known")
 
 // Validator Construct the Block and propose them to the network 
 
@@ -25,7 +28,8 @@ func (v *BlockValidator) ValidateBlock(b *Block) error {
 	// The validator Block height should not be less than the curremt Block height that's mature because that will means that we already have that block
 	// we also cannot implement the block with the height greater then the current height + 1
 	if v.bc.HasBlock(b.Height) {
-		return fmt.Errorf("chain already contains block (%d) with hash (%s) ", b.Height, b.Hash(BlockHasher{}))
+		// return fmt.Errorf("chain already contains block (%d) with hash (%s) ", b.Height, b.Hash(BlockHasher{}))
+		return ErrBlockKnown
 	}
 
 	if b.Height != v.bc.Height() + 1 {

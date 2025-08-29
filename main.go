@@ -12,6 +12,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+
+
+
 // Server  -> container
 // Transport  -> tcp, udp
 // Block
@@ -47,36 +50,51 @@ import (
 // 	s.Start()
 // }  // OLD Implementation is this
 
+
+var transports = []network.Transport {
+	network.NewLocalTransport("LOCAL"),
+	network.NewLocalTransport("REMOTE_A"),
+	network.NewLocalTransport("REMOTE_B"),
+	network.NewLocalTransport("REMOTE_C"),
+}
+
 func main() {
-	trLocal := network.NewLocalTransport("LOCAL")
-	trRemoteA := network.NewLocalTransport("REMOTE_A")
-	trRemoteB := network.NewLocalTransport("REMOTE_B")
-	trRemoteC := network.NewLocalTransport("REMOTE_C")
+	// trLocal := network.NewLocalTransport("LOCAL")
+	// trRemoteA := network.NewLocalTransport("REMOTE_A")
+	// trRemoteB := network.NewLocalTransport("REMOTE_B")
+	// trRemoteC := network.NewLocalTransport("REMOTE_C")
 
 	
 
-	trLocal.Connect(trRemoteA)
-	trRemoteA.Connect(trRemoteB)
-	trRemoteB.Connect(trRemoteA)
-	trRemoteB.Connect(trRemoteC)
-	trRemoteA.Connect(trLocal)
+	// trLocal.Connect(trRemoteA)
+	// trRemoteA.Connect(trRemoteB)
+	// trRemoteB.Connect(trRemoteA)
+	// trRemoteB.Connect(trRemoteC)
+	// trRemoteA.Connect(trLocal)
 
-	initRemoteServer([]network.Transport{trRemoteA, trRemoteB, trRemoteC})
+	initRemoteServer(transports)
+
+	localNode := transports[0]
+	remoteNode := transports[1]
 
 	go func() {
 		for { // Remote Node Sending Message Every second
-			if err := sendTransaction(trRemoteA, trLocal.Addr()); err != nil {
+			if err := sendTransaction(remoteNode, localNode.Addr()); err != nil {
 				logrus.Error(err)
 			}
 			time.Sleep(2 * time.Second)
 		}
 	}()
 
+	
+
 	privKey := crypto.GeneratePrivateKey()
-	localServer := makeServer("LOCAL", trLocal, &privKey)
+	localServer := makeServer("LOCAL", transports[0], &privKey)  // transports[0] -> the local one that we start server from 
 	localServer.Start()
 
 }
+
+
 
 func initRemoteServer(trs []network.Transport) {
 	for i := 0; i < len(trs) ; i++ {
@@ -92,7 +110,7 @@ func makeServer(id string, tr network.Transport, privKey *crypto.PrivateKey) *ne
 		Transport : tr,
 		PrivateKey: privKey,
 		ID:         id,
-		Transports: []network.Transport{tr},
+		Transports: transports,
 	}
 
 	s, err := network.NewServer(opts)
