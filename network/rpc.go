@@ -3,24 +3,25 @@ package network
 import (
 	"bytes"
 	"encoding/gob"
-	"io"
 	"fmt"
+	"net"
 	"github.com/772005himanshu/Mingo-Blockchain/core"
 	"github.com/sirupsen/logrus"
+	"io"
 )
 
 type MessageType byte
 
 const (
-	MessageTypeTx MessageType = 0x1
-	MessageTypeBlock MessageType = 0x2
+	MessageTypeTx        MessageType = 0x1
+	MessageTypeBlock     MessageType = 0x2
 	MessageTypeGetBlocks MessageType = 0x3
-	MessageTypeStatus MessageType = 0x4
+	MessageTypeStatus    MessageType = 0x4
 	MessageTypeGetStatus MessageType = 0x5
 )
 
 type RPC struct {
-	From    NetAddr
+	From    net.Addr
 	Payload io.Reader
 }
 
@@ -29,10 +30,10 @@ type Message struct {
 	Data   []byte
 }
 
-func NewMessage(t MessageType , data []byte) *Message {
+func NewMessage(t MessageType, data []byte) *Message {
 	return &Message{
 		Header: t,
-		Data: data,
+		Data:   data,
 	}
 }
 
@@ -43,7 +44,7 @@ func (msg *Message) Bytes() []byte {
 }
 
 type DecodedMessage struct {
-	From NetAddr
+	From net.Addr
 	Data any
 }
 
@@ -57,7 +58,7 @@ type RPCDecodeFunc func(RPC) (*DecodedMessage, error)
 func DefaultRPCDecodeFunc(rpc RPC) (*DecodedMessage, error) {
 	msg := Message{}
 	if err := gob.NewDecoder(rpc.Payload).Decode(&msg); err != nil {
-		return nil , fmt.Errorf("failed to decode message from %s: %s", rpc.From, err)
+		return nil, fmt.Errorf("failed to decode message from %s: %s", rpc.From, err)
 	}
 
 	logrus.WithFields(logrus.Fields{
@@ -72,7 +73,7 @@ func DefaultRPCDecodeFunc(rpc RPC) (*DecodedMessage, error) {
 			return nil, err
 		}
 
-		return &DecodedMessage {
+		return &DecodedMessage{
 			From: rpc.From,
 			Data: tx,
 		}, nil
@@ -83,7 +84,7 @@ func DefaultRPCDecodeFunc(rpc RPC) (*DecodedMessage, error) {
 			return nil, err
 		}
 
-		return &DecodedMessage {
+		return &DecodedMessage{
 			From: rpc.From,
 			Data: block,
 		}, nil
@@ -94,7 +95,7 @@ func DefaultRPCDecodeFunc(rpc RPC) (*DecodedMessage, error) {
 			Data: &GetStatusMessage{},
 		}, nil
 
-	case MessageTypeStatus: 
+	case MessageTypeStatus:
 		statusMessage := new(StatusMessage)
 		if err := gob.NewDecoder(bytes.NewReader(msg.Data)).Decode(statusMessage); err != nil {
 			return nil, err
@@ -103,14 +104,12 @@ func DefaultRPCDecodeFunc(rpc RPC) (*DecodedMessage, error) {
 		return &DecodedMessage{
 			From: rpc.From,
 			Data: statusMessage,
-		}, nil  // nil as the error
+		}, nil // nil as the error
 
 	default:
 		return nil, fmt.Errorf("invalid message header %x", msg.Header)
 	}
-} 
-
-
+}
 
 type RPCProcessor interface {
 	// Take the encoded stuff from the handler and process it , there should have method we call like Rust Solana Native match instruction

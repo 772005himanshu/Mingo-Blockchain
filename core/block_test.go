@@ -1,13 +1,13 @@
 package core
 
 import (
-	"testing"
-	"github.com/stretchr/testify/assert"
+	"bytes"
+	"fmt"
 	"github.com/772005himanshu/Mingo-Blockchain/crypto"
 	"github.com/772005himanshu/Mingo-Blockchain/types"
+	"github.com/stretchr/testify/assert"
+	"testing"
 	"time"
-	"fmt"
-	"bytes"
 )
 
 // Handler Functionality
@@ -15,11 +15,11 @@ func randomBlock(t *testing.T, height uint32, prevBlockHash types.Hash) *Block {
 	privKey := crypto.GeneratePrivateKey()
 	tx := randomTxWithSignature(t)
 
-	header := &Header {
-		Version: 1,
+	header := &Header{
+		Version:       1,
 		PrevBlockHash: prevBlockHash,
-		Height: height,
-		Timestamp: uint64(time.Now().UnixNano()),
+		Height:        height,
+		Timestamp:     uint64(time.Now().UnixNano()),
 	}
 
 	b, err := NewBlock(header, []*Transaction{tx})
@@ -31,22 +31,22 @@ func randomBlock(t *testing.T, height uint32, prevBlockHash types.Hash) *Block {
 	return b
 }
 
-func TestHashBlock(t *testing.T, prevBlockHash types.Hash)  {
-	b := randomBlock(t,0, prevBlockHash)
+func TestHashBlock(t *testing.T, prevBlockHash types.Hash) {
+	b := randomBlock(t, 0, prevBlockHash)
 
-	fmt.Println(b.Hash(BlockHasher{})) 
+	fmt.Println(b.Hash(BlockHasher{}))
 }
 
 func TestSignBlock(t *testing.T, prevBlockHash types.Hash) {
 	privKey := crypto.GeneratePrivateKey()
-	b := randomBlock(t, 0 , types.Hash{})
+	b := randomBlock(t, 0, types.Hash{})
 	assert.Nil(t, b.Sign(privKey))
 	assert.NotNil(t, b.Signature)
 }
 
 func TestVerifyBlock(t *testing.T, prevBlockHash types.Hash) {
 	privKey := crypto.GeneratePrivateKey()
-	b := randomBlock(t, 0,types.Hash{})
+	b := randomBlock(t, 0, types.Hash{})
 	assert.Nil(t, b.Sign(privKey))
 	// assert.NotNil(t, b.Signature)
 	assert.Nil(t, b.Verify())

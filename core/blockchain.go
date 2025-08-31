@@ -1,33 +1,32 @@
-package core 
+package core
 
 import (
 	"fmt"
-	"sync"
 	"github.com/go-kit/log"
-	
+	"sync"
 )
 
 type Blockchain struct {
 	logger log.Logger
 	// Distributed System this need to thread safe -> we can add the mutex or construct something mechanism (avoiding  the mutex by using the channels)
-	store Storage  // this storage would contains complete blocks of the transactions
-	lock sync.RWMutex
-	headers []*Header // list of the slice if points to headers , we make the list in the memeory cheap and easy to retrive through it -> Ram is cheap
-	validator Validator
-	contractState *State  // Make it as interface
+	store         Storage // this storage would contains complete blocks of the transactions
+	lock          sync.RWMutex
+	headers       []*Header // list of the slice if points to headers , we make the list in the memeory cheap and easy to retrive through it -> Ram is cheap
+	validator     Validator
+	contractState *State // Make it as interface
 }
 
 func NewBlockchain(l log.Logger, genesis *Block) (*Blockchain, error) {
 
-	bc := &Blockchain {
-		contractState: NewState(),  // a special account to store the state os the Contract
-		headers: []*Header{},
-		store : NewMemoryStore(),
-		logger: l,
+	bc := &Blockchain{
+		contractState: NewState(), // a special account to store the state os the Contract
+		headers:       []*Header{},
+		store:         NewMemoryStore(),
+		logger:        l,
 	}
 
 	bc.validator = NewBlockValidator(bc) // validator should be constructed from the config file
-	// so every default interface implementation should be constructed from the config file so people wnat to replace it they just swap it out in the config 
+	// so every default interface implementation should be constructed from the config file so people wnat to replace it they just swap it out in the config
 
 	err := bc.addBlockWithoutValidation(genesis)
 	return bc, err
@@ -38,38 +37,33 @@ func (bc *Blockchain) SetValidator(v Validator) {
 }
 
 func (bc *Blockchain) AddBlock(b *Block) error {
-	// validate 
+	// validate
 	if err := bc.validator.ValidateBlock(b); err != nil {
 		return err
 	}
 
-	// Run the VM Code we gonna use it 
+	// Run the VM Code we gonna use it
 	for _, tx := range b.Transactions {
-		bc.logger.Log("msg", "executing code","len", len(tx.Data) , "hash", tx.Hash(&TxHasher{}))
+		bc.logger.Log("msg", "executing code", "len", len(tx.Data), "hash", tx.Hash(&TxHasher{}))
 
 		vm := NewVM(tx.Data, bc.contractState)
 		if err := vm.Run(); err != nil {
 			return err
 		}
 
-		fmt.Printf("STATE: %+v\n", vm.contractState)
-
-
-		result := vm.stack.Pop()
-		fmt.Printf("VM Result: %+v\n", result)
+		fmt.Printf("State => %+v", bc.contractState.data)
 	}
 
 	return bc.addBlockWithoutValidation(b)
 }
 
-
-func (bc *Blockchain) GetHeader(height uint32) (*Header, error ) {
+func (bc *Blockchain) GetHeader(height uint32) (*Header, error) {
 	if height > bc.Height() {
-		return nil, fmt.Errorf("given height (%d) too high" , height)
+		return nil, fmt.Errorf("given height (%d) too high", height)
 	}
-	bc.lock.Lock() // what is the use of this lock here
-	defer bc.lock.Unlock() // then on next there is unlock
-	return bc.headers[height] , nil  // We are going to grab the header from the list 
+	bc.lock.Lock()                 // what is the use of this lock here
+	defer bc.lock.Unlock()         // then on next there is unlock
+	return bc.headers[height], nil // We are going to grab the header from the list
 }
 
 func (bc *Blockchain) HasBlock(height uint32) bool {
@@ -92,14 +86,13 @@ func (bc *Blockchain) addBlockWithoutValidation(b *Block) error {
 
 	bc.logger.Log(
 		"msg", "new block",
-		"hash" , b.Hash(BlockHasher{}),
+		"hash", b.Hash(BlockHasher{}),
 		"height", b.Height,
 		"transactions", len(b.Transactions),
 	)
-	
-	return bc.store.Put(b) // put the block in the Storage 
-}
 
+	return bc.store.Put(b) // put the block in the Storage
+}
 
 /// for the out dated package  - keep updated
 /// -> use command : go get -u golang.org/x/sys

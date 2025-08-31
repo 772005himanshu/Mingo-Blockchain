@@ -2,21 +2,21 @@ package core
 
 import (
 	"bytes"
-	"encoding/gob"
-	"time"
-	"fmt"
 	"crypto/sha256"
+	"encoding/gob"
+	"fmt"
 	"github.com/772005himanshu/Mingo-Blockchain/crypto"
 	"github.com/772005himanshu/Mingo-Blockchain/types"
+	"time"
 )
 
 type Header struct {
-	Version   uint32
-	DataHash types.Hash
+	Version       uint32
+	DataHash      types.Hash
 	PrevBlockHash types.Hash
-	Timestamp uint64
-	Height    uint32
-	Nonce     uint64
+	Timestamp     uint64
+	Height        uint32
+	Nonce         uint64
 }
 
 func (h *Header) Bytes() []byte {
@@ -28,18 +28,18 @@ func (h *Header) Bytes() []byte {
 }
 
 type Block struct {
-	*Header  // it is copied version of the Header -> the * reason behind this we donot maintain the copy of the Header , we want to maintain  a list of the pointers
+	*Header      // it is copied version of the Header -> the * reason behind this we donot maintain the copy of the Header , we want to maintain  a list of the pointers
 	Transactions []*Transaction
-	Validator crypto.PublicKey
-	Signature *crypto.Signature
+	Validator    crypto.PublicKey
+	Signature    *crypto.Signature
 
-	// Cached Version of the header Hash 
+	// Cached Version of the header Hash
 	hash types.Hash
 }
 
-func NewBlock(h *Header,txx []*Transaction) (*Block, error ){
+func NewBlock(h *Header, txx []*Transaction) (*Block, error) {
 	return &Block{
-		Header: h,
+		Header:       h,
 		Transactions: txx,
 	}, nil
 }
@@ -50,23 +50,22 @@ func NewBlockFromPrevHeader(prevHeader *Header, txx []*Transaction) (*Block, err
 		return nil, err
 	}
 	header := &Header{
-		Version : 1,
-		Height : prevHeader.Height + 1,
-		DataHash : dataHash,
+		Version:       1,
+		Height:        prevHeader.Height + 1,
+		DataHash:      dataHash,
 		PrevBlockHash: BlockHasher{}.Hash(prevHeader),
-		Timestamp: uint64(time.Now().UnixNano()),
+		Timestamp:     uint64(time.Now().UnixNano()),
 	}
 
-	return NewBlock(header,txx)
+	return NewBlock(header, txx)
 }
 
 func (b *Block) AddTransaction(tx *Transaction) {
 	b.Transactions = append(b.Transactions, tx)
 }
 
-
-func (b *Block) Sign(privKey crypto.PrivateKey) error  {
-	sig , err := privKey.Sign(b.Header.Bytes())
+func (b *Block) Sign(privKey crypto.PrivateKey) error {
+	sig, err := privKey.Sign(b.Header.Bytes())
 	if err != nil {
 		return err // The signature is embedded in the Block then return the error , not the panic
 	}
@@ -86,7 +85,7 @@ func (b *Block) Verify() error {
 		return fmt.Errorf("Block has invalid signature")
 	}
 
-	for _, tx := range b.Transactions{
+	for _, tx := range b.Transactions {
 		if err := tx.Verify(); err != nil {
 			return err
 		}
@@ -111,7 +110,7 @@ func (b *Block) Encode(enc Encoder[*Block]) error {
 	return enc.Encode(b)
 }
 
-func (b *Block) Hash(hasher Hasher[*Header] ) types.Hash {
+func (b *Block) Hash(hasher Hasher[*Header]) types.Hash {
 	if b.hash.IsZero() {
 		b.hash = hasher.Hash(b.Header)
 	}
@@ -132,6 +131,5 @@ func CalculateDataHash(txx []*Transaction) (hash types.Hash, err error) {
 
 	hash = sha256.Sum256(buf.Bytes())
 
-	return hash ,err
-} 
-
+	return hash, err
+}

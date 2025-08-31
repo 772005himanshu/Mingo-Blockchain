@@ -1,12 +1,12 @@
 package core
 
 import (
-	"io"
 	"crypto/elliptic"
 	"encoding/gob"
+	"io"
 )
 
-// if we place the encoding in the network , then we have the circular dependencies 
+// if we place the encoding in the network , then we have the circular dependencies
 
 type Encoder[T any] interface {
 	Encode(T) error
@@ -20,15 +20,14 @@ type GobTxEncoder struct {
 	w io.Writer
 }
 
-
 func NewGobTxEncoder(w io.Writer) *GobTxEncoder {
-	return &GobTxEncoder {
+	return &GobTxEncoder{
 		w: w,
 	}
 }
 
 func (e *GobTxEncoder) Encode(tx *Transaction) error {
-	enc := gob.NewEncoder(e.w)  // The Encoder is responsible to include a buffer or connection or whatever si it can stream its encoding
+	enc := gob.NewEncoder(e.w) // The Encoder is responsible to include a buffer or connection or whatever si it can stream its encoding
 	return enc.Encode(tx)
 }
 
@@ -38,13 +37,13 @@ type GobTxDecoder struct {
 
 func NewGobTxDecoder(r io.Reader) *GobTxDecoder {
 	gob.Register(elliptic.P256())
-	return &GobTxDecoder {
+	return &GobTxDecoder{
 		r: r,
 	}
 }
 
 func (e *GobTxDecoder) Decode(tx *Transaction) error {
-	enc := gob.NewDecoder(e.r)  
+	enc := gob.NewDecoder(e.r)
 	return enc.Decode(tx)
 }
 
@@ -53,7 +52,7 @@ type GobBlockEncoder struct {
 }
 
 func NewGobBlockEncoder(w io.Writer) *GobBlockEncoder {
-	return &GobBlockEncoder {
+	return &GobBlockEncoder{
 		w: w,
 	}
 }
@@ -67,7 +66,7 @@ type GobBlockDecoder struct {
 }
 
 func NewGobBlockDecoder(r io.Reader) *GobBlockDecoder {
-	return &GobBlockDecoder {
+	return &GobBlockDecoder{
 		r: r,
 	}
 }

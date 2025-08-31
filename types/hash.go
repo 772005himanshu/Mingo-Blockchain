@@ -7,9 +7,8 @@ import (
 
 type Hash [32]uint8
 
-
 func (h *Hash) IsZero() bool {
-	for i:=0; i < 32 ; i++ {
+	for i := 0; i < 32; i++ {
 		if h[i] != 0 {
 			return false
 		}
@@ -20,7 +19,7 @@ func (h *Hash) IsZero() bool {
 
 func (h Hash) ToSlice() []byte {
 	b := make([]byte, 32)
-	for i:=0; i<32 ; i++ {
+	for i := 0; i < 32; i++ {
 		b[i] = h[i]
 	}
 	return b

@@ -6,15 +6,12 @@ type GetBlocksMessage struct {
 	To uint32
 }
 
-
 type GetStatusMessage struct {
-
 }
 
 type StatusMessage struct {
-	// the id of the server 
-	ID string
+	// the id of the server
+	ID            string
 	CurrentHeight uint32
-	Version  uint32
+	Version       uint32
 }
-

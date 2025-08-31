@@ -5,8 +5,8 @@ import (
 	"reflect"
 )
 
-func AssertEqual(a , b any) {
+func AssertEqual(a, b any) {
 	if !reflect.DeepEqual(a, b) {
-		log.Fatalf("ASSERTION: %+v != %+v", a ,b)
+		log.Fatalf("ASSERTION: %+v != %+v", a, b)
 	}
 }

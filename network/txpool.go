@@ -1,13 +1,13 @@
 package network
 
 import (
-	"sync"
 	"github.com/772005himanshu/Mingo-Blockchain/core"
 	"github.com/772005himanshu/Mingo-Blockchain/types"
+	"sync"
 )
 
 type TxPool struct {
-	all *TxSortedMap
+	all     *TxSortedMap
 	pending *TxSortedMap
 	// The maxLength of the total pool of transactions
 	// when the pool is full we will prune the oldest transactions
@@ -15,9 +15,9 @@ type TxPool struct {
 }
 
 func NewTxPool(maxLength int) *TxPool {
-	return &TxPool {
-		all: NewTxSortedMap(),
-		pending: NewTxSortedMap(),
+	return &TxPool{
+		all:       NewTxSortedMap(),
+		pending:   NewTxSortedMap(),
 		maxLength: maxLength,
 	}
 }
@@ -53,15 +53,15 @@ func (p *TxPool) PendingCount() int {
 }
 
 type TxSortedMap struct {
-	lock sync.RWMutex
+	lock   sync.RWMutex
 	lookup map[types.Hash]*core.Transaction
-	txx *types.List[*core.Transaction]
+	txx    *types.List[*core.Transaction]
 }
 
 func NewTxSortedMap() *TxSortedMap {
-	return &TxSortedMap {
+	return &TxSortedMap{
 		lookup: make(map[types.Hash]*core.Transaction),
-		txx: types.NewList[*core.Transaction](),
+		txx:    types.NewList[*core.Transaction](),
 	}
 }
 
@@ -93,7 +93,6 @@ func (t *TxSortedMap) Add(tx *core.Transaction) {
 	}
 }
 
-
 func (t *TxSortedMap) Remove(h types.Hash) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
@@ -108,7 +107,6 @@ func (t *TxSortedMap) Count() int {
 
 	return len(t.lookup)
 }
-
 
 func (t *TxSortedMap) Contains(h types.Hash) bool {
 	t.lock.RLock()

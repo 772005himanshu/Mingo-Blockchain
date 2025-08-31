@@ -2,26 +2,26 @@ package types
 
 import (
 	"fmt"
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestNewList(t *testing.T) {
 	l := NewList[int]()
-	assert.Equal(t , l.Data, []int{})
+	assert.Equal(t, l.Data, []int{})
 }
 
 func TestListClear(t *testing.T) {
 	l := NewList[int]()
 	n := 100
 
-	for i := 0; i< n ; i++ {
+	for i := 0; i < n; i++ {
 		l.Insert(i)
 	}
 
-	assert.Equal(t, n ,l.Len())
+	assert.Equal(t, n, l.Len())
 	l.Clear()
-	assert.Equal(t, 0 , l.Len())
+	assert.Equal(t, 0, l.Len())
 
 }
 
@@ -29,7 +29,7 @@ func TestLsitContains(t *testing.T) {
 	l := NewList[int]()
 	n := 100
 
-	for i:= 0 ; i< n;i++ {
+	for i := 0; i < n; i++ {
 		l.Insert(i)
 		assert.True(t, l.Contains(i))
 	}
