@@ -1,16 +1,15 @@
 package network
 
 import (
+	"bytes"
 	"fmt"
 	"net"
-	"bytes"
 )
 
 type TCPPeer struct {
-	conn net.Conn
-	Outgoing bool // if its outgoing , it be true , if its incmoing it to be false 
+	conn     net.Conn
+	Outgoing bool // if its outgoing , it be true , if its incmoing it to be false
 }
-
 
 func (p *TCPPeer) Send(b []byte) error {
 	_, err := p.conn.Write(b)
@@ -20,20 +19,19 @@ func (p *TCPPeer) Send(b []byte) error {
 func (p *TCPPeer) readLoop(rpcCh chan RPC) {
 	buf := make([]byte, 2048)
 	for {
-		n ,err := p.conn.Read(buf)
+		n, err := p.conn.Read(buf)
 		if err != nil {
 			fmt.Printf("read error: %s", err)
 			continue
 		}
 
 		msg := buf[:n]
-		rpcCh <- RPC {
-			From : p.conn.RemoteAddr(),
+		rpcCh <- RPC{
+			From:    p.conn.RemoteAddr(),
 			Payload: bytes.NewReader(msg),
 		}
 
-		
-		fmt.Println(string(msg))  // no need 
+		fmt.Println(string(msg)) // no need
 	}
 }
 
@@ -65,24 +63,6 @@ func (t *TCPTransport) Start() error {
 }
 
 
-func (t *TCPTransport) readLoop(peer *TCPPeer) {
-	// Here we are reading from the server
-	buf := make([]byte, 2048)
-	for {
-		n, err := peer.conn.Read(buf)
-		if err != nil {
-			fmt.Printf("read error: %s", err)
-			continue
-		}
-
-		msg := buf[:n]
-
-		fmt.Printf("%+v", msg)
-		// handleMessage -> server
-
-
-	}
-}
 
 func (t *TCPTransport) acceptLoop() {
 	for {
@@ -100,9 +80,5 @@ func (t *TCPTransport) acceptLoop() {
 
 		t.peerCh <- peer // here we are passing the peer to channel
 
-		fmt.Printf("new incoming TCP connection -> %+v\n", conn)
-
-
 	}
 }
-

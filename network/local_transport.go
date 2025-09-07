@@ -3,8 +3,8 @@ package network
 import (
 	"bytes"
 	"fmt"
-	"sync"
 	"net"
+	"sync"
 )
 
 type LocalTransport struct {

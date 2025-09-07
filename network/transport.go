@@ -1,6 +1,7 @@
 package network
 
 import "net"
+
 type NetAddr string
 
 type Transport interface {

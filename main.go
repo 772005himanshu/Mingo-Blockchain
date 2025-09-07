@@ -5,7 +5,7 @@ import (
 	"log"
 	// "fmt"
 	// "encoding/gob"
-	// "time"
+	"time"
 	"github.com/772005himanshu/Mingo-Blockchain/core"
 	"github.com/772005himanshu/Mingo-Blockchain/crypto"
 	"github.com/772005himanshu/Mingo-Blockchain/network"
@@ -20,18 +20,22 @@ func main() {
 	localNode := makeServer("LOCAL_NODE", &privKey, ":3000", []string{":4000"})
 	go localNode.Start()
 
-
 	remoteNode := makeServer("REMOTE_NODE", nil, ":4000", []string{":3000"})
 	go remoteNode.Start()
 
-	remoteNodeB := makeServer("REMOTE_NODE_B", nil, ":4000", nil)  // this we donot need to connnect with someone , because they all are on the same height
+	remoteNodeB := makeServer("REMOTE_NODE_B", nil, ":4000", nil) // this we donot need to connnect with someone , because they all are on the same height
 	go remoteNodeB.Start()
 
-	// time.Sleep(1 * time.Second)
+	go func() {
+		time.Sleep(15 * time.Second)
 
-	// for i := 0; i < 10; i++ {
-	// 	go tcpTester()
-	// }
+		lateNode := makeServer("LATE_NODE", nil, ":6000", []string{":4000"})
+		go lateNode.Start()
+	}()
+
+	time.Sleep(1 * time.Second)
+
+	tcpTester()
 
 	select {}
 }
@@ -43,7 +47,7 @@ func tcpTester() {
 	}
 
 	privKey := crypto.GeneratePrivateKey()
-	data := []byte{ 0x03, 0x0a, 0x46 ,0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d, 0x05, 0x0a, 0x0f}
+	data := []byte{0x03, 0x0a, 0x46, 0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d, 0x05, 0x0a, 0x0f}
 
 	tx := core.NewTransaction(data)
 	tx.Sign(privKey)
@@ -63,10 +67,10 @@ func tcpTester() {
 
 func makeServer(id string, privKey *crypto.PrivateKey, addr string, seedNodes []string) *network.Server {
 	opts := network.ServerOpts{
-		SeedNodes: seedNodes,
+		SeedNodes:  seedNodes,
 		ListenAddr: addr,
-		PrivateKey:   privKey,
-		ID:           id,
+		PrivateKey: privKey,
+		ID:         id,
 	}
 
 	s, err := network.NewServer(opts)
