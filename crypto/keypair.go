@@ -9,6 +9,11 @@ import (
 	"math/big"
 )
 
+
+type PubKey []byte  // Public is the slice of the bytes
+
+
+
 type PrivateKey struct {
 	key *ecdsa.PrivateKey
 }
@@ -36,22 +41,15 @@ func GeneratePrivateKey() PrivateKey {
 	}
 }
 
-func (k PrivateKey) PublicKey() PublicKey {
-	return PublicKey{
-		Key: &k.key.PublicKey,
-	}
+func (k PrivateKey) PublicKey() PubKey {
+	return elliptic.MarshalCompressed(k.key.PublicKey, k.key.PublicKey.X, k.key.PublicKey.Y)  // From This we can get the Compressed Verion of the Public key 
 }
 
-type PublicKey struct {
-	Key *ecdsa.PublicKey
-}
+type PublicKey []byte
 
-func (k PublicKey) ToSlice() []byte {
-	return elliptic.MarshalCompressed(k.Key, k.Key.X, k.Key.Y)
-}
 
 func (k PublicKey) Address() types.Address {
-	h := sha256.Sum256(k.ToSlice())
+	h := sha256.Sum256(k)  // We can Directly use the k because this is in the bytes
 
 	return types.AddressFromBytes(h[len(h)-20:])
 }
@@ -60,6 +58,15 @@ type Signature struct {
 	S, R *big.Int
 }
 
-func (sig Signature) Verify(pubKey PublicKey, data []byte) bool {
-	return ecdsa.Verify(pubKey.Key, data, sig.R, sig.S)
+func (sig Signature) Verify(pubKey PubKey, data []byte) bool {
+	x, y := elliptic.UnmarshalCompressed(elliptic.P256(),pubKey)
+	key := &ecdsa.PublicKey{
+		Curve : elliptic.P256(),
+		X: x,
+		Y: y,
+	}  // From here we get the slice of publicKey that is in the PublicKey
+
+	// now we want to convert to the Ecdsa Pubkey , so we pubt it in the ecdsa verify 
+
+	return ecdsa.Verify(key, data, sig.R, sig.S)
 }

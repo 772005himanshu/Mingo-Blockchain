@@ -205,7 +205,7 @@ func (s *Server) processGetBlocksMessage(from net.Addr, data *GetBlocksMessage) 
 	)
 
 	if data.To == 0 {
-		for i := 0 ;i< int(height); i++ {
+		for i := int(data.From);i< int(height); i++ {
 			block, err := s.chain.GetBlock(uint32(i))
 			if err != nil {
 				return err
@@ -227,11 +227,12 @@ func (s *Server) processGetBlocksMessage(from net.Addr, data *GetBlocksMessage) 
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
+	msg := NewMessage(MessageTypeGetBlocks, buf.Bytes())
+
 	peer, ok := s.peerMap[from]
 	if !ok {
 		return fmt.Errorf("peer %s ot known", peer.conn.RemoteAddr())
 	}
-	msg := NewMessage(MessageTypeBlocks, buf.Bytes())
 
 	return peer.Send(msg.Bytes())
 
@@ -275,8 +276,10 @@ func (s *Server) processBlocksMessage(from net.Addr, data *BlocksMessage) error 
 	s.Logger.Log("msg", "received Blocks", "from", from)
 
 	for _, block := range data.Blocks {
+		fmt.Printf("BLOCK => %+v\n", block)
 		if err := s.chain.AddBlock(block); err != nil {
-			return err
+			fmt.Printf("Adding block Error %s\n", err)
+			continue
 		}
 	}
 	return nil
@@ -317,7 +320,7 @@ func (s *Server) processGetStatusMessage(from net.Addr, data *GetStatusMessage) 
 	s.Logger.Log("msg", "received getStatus message", "from", from) // why we are using the Logger , because we have the prefix to it , and we will wait what node is sending what
 
 	statusMessage := &StatusMessage{
-		CurrentHeight: s.chain.Height(),
+		CurrentHeight: s.chain.Height() + 1,
 		ID:            s.ID,
 	}
 
@@ -370,6 +373,47 @@ func (s *Server) processTransaction(tx *core.Transaction) error {
 	s.mempool.Add(tx)
 
 	return nil
+}
+
+
+// TODO : Find a way to amke sure we donot keep syncing when we are at the highest block height in the network
+func (s *Server) requestBlocksLoop(peer net.Addr) error {
+	ticker := time.NewTicker(3 * time.Second)
+
+	for {
+		// Logic
+
+		height := s.chain.Height()
+
+		s.Logger.Log("msg", "requesting new blocks", "currentHeight", height)
+		// In this We are 100 % sure that the node has Blocks Heigher than us
+		getBlockMessage := &GetBlocksMessage {
+			From : height,
+			To : 0,
+		}
+		buf := new(bytes.Buffer)
+	
+		if err := gob.NewEncoder(buf).Encode(getBlockMessage); err != nil {
+			return err
+		}
+	
+		s.mu.RLock()
+		defer s.mu.RUnlock()
+
+	    msg := NewMessage(MessageTypeGetBlocks, buf.Bytes())
+		peer, ok := s.peerMap[peer]
+		if !ok {
+			return fmt.Errorf("peer %s ot known", peer.conn.RemoteAddr())
+		}
+
+		if err := peer.Send(msg.Bytes()) ; err != nil {
+			s.Logger.Log("error", "failed to send to peer", "err", err, "peer", peer)
+		}
+
+		<- ticker.C
+	    // But This thinker Sometimes Go out of the Sync
+		// After every 3 seconds it go and take message through loop
+	}
 }
 
 func (s *Server) broadcastBlock(b *core.Block) error {
@@ -437,6 +481,11 @@ func genesisBlock() *core.Block {
 	}
 
 	b, _ := core.NewBlock(header, nil)
+
+	privKey := crypto.GeneratePrivateKey()
+	if err := b.Sign(privKey); err != nil {
+		panic(err)
+	}
 	return b
 }
 
