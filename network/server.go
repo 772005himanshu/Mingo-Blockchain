@@ -293,27 +293,9 @@ func (s *Server) processStatusMessage(from net.Addr,data *StatusMessage) error {
 		return nil
 	}
 
-	// In this case we are 100% sure that the node has blocks heigher than us
-	getBlockMessage := &GetBlocksMessage {
-		From : s.chain.Height(),
-		To : 0,
-	}
-	buf := new(bytes.Buffer)
+	go s.requestBlocksLoop(from)
 
-	if err := gob.NewEncoder(buf).Encode(getBlockMessage); err != nil {
-		return err
-	}
-
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	peer, ok := s.peerMap[from]
-	if !ok {
-		return fmt.Errorf("peer %s ot known", peer.conn.RemoteAddr())
-	}
-	msg := NewMessage(MessageTypeGetBlocks, buf.Bytes())
-
-	return peer.Send(msg.Bytes())
+	return nil
 }
 
 func (s *Server) processGetStatusMessage(from net.Addr, data *GetStatusMessage) error {
