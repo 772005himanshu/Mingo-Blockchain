@@ -9,15 +9,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/772005himanshu/Mingo-Blockchain/api"
 	"github.com/772005himanshu/Mingo-Blockchain/core"
 	"github.com/772005himanshu/Mingo-Blockchain/crypto"
 	"github.com/772005himanshu/Mingo-Blockchain/types"
+
 	"github.com/go-kit/log"
 )
 
 var defaultBlockTime = 5 * time.Second
 
 type ServerOpts struct {
+	APIListenAddr string
 	SeedNodes     []string
 	ListenAddr    string
 	TCPTransport  *TCPTransport
@@ -59,13 +62,25 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		return nil, err
 	}
 
+	// JSON RPC Server
+	// Only boot Up the API Server if the config has a valid port number
+	if len(opts.APIListenAddr) > 0 {
+		apiServerCfg := api.ServerConfig {
+			Logger: opts.Logger,
+			ListenAddr: opts.APIListenAddr,
+		}
+		apiServer := api.NewServer(apiServerCfg,chain )
+		go apiServer.Start()
+
+		opts.Logger.Log("msg", "JSON API server running", "port", opts.APIListenAddr)
+	}
 	peerCh := make(chan *TCPPeer)
 	tr := NewTCPTransport(opts.ListenAddr, peerCh)
 
 	s := &Server{
 		TCPTransport: tr,
 		// We have two type of channel -> blocking and infinite channel
-		peerCh:      peerCh,                      // we need to add the blocking channel why ? we need to implement the deterministic way to handle the blockchain and with out the race condition (reentrancy Peer repaeting like that )
+		peerCh:      peerCh,  // we need to add the blocking channel why ? we need to implement the deterministic way to handle the blockchain and with out the race condition (reentrancy Peer repaeting like that
 		peerMap:     make(map[net.Addr]*TCPPeer), //
 		ServerOpts:  opts,
 		chain:       chain,
@@ -195,6 +210,7 @@ func (s *Server) ProcessMessage(msg *DecodedMessage) error {
 	return nil
 }
 
+
 func (s *Server) processGetBlocksMessage(from net.Addr, data *GetBlocksMessage) error {
 	s.Logger.Log("msg" ,"received getBlocks message", "from", from)
 
@@ -205,7 +221,7 @@ func (s *Server) processGetBlocksMessage(from net.Addr, data *GetBlocksMessage) 
 	)
 
 	if data.To == 0 {
-		for i := int(data.From);i< int(height); i++ {
+		for i := int(data.From);i <= int(height); i++ {
 			block, err := s.chain.GetBlock(uint32(i))
 			if err != nil {
 				return err
@@ -367,10 +383,10 @@ func (s *Server) requestBlocksLoop(peer net.Addr) error {
 
 		height := s.chain.Height()
 
-		s.Logger.Log("msg", "requesting new blocks", "currentHeight", height)
+		s.Logger.Log("msg", "requesting new blocks", "requesting height", height)
 		// In this We are 100 % sure that the node has Blocks Heigher than us
 		getBlockMessage := &GetBlocksMessage {
-			From : height,
+			From : height + 1,
 			To : 0,
 		}
 		buf := new(bytes.Buffer)
