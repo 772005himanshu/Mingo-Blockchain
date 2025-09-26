@@ -1,16 +1,16 @@
 package main
 
 import (
-	// "bytes"
+	"bytes"
 	"log"
 	// "fmt"
 	// "encoding/gob"
 	"time"
-	// "github.com/772005himanshu/Mingo-Blockchain/core"
+	"github.com/772005himanshu/Mingo-Blockchain/core"
 	"github.com/772005himanshu/Mingo-Blockchain/crypto"
 	"github.com/772005himanshu/Mingo-Blockchain/network"
 	// "github.com/sirupsen/logrus"
-	// "net"
+	"net"
 	// "time"
 )
 
@@ -35,36 +35,36 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-	// tcpTester()
+	txSender()
 
-	select {}
+	select {}  // select the block and goroutines here 
 }
 
-// NOTE This is needed to take data from the blokchain nothing to more , nut if we run this in the main funtion , the blockchain thinks like we are new node to connect Here 
-// func tcpTester() {
-// 	conn, err := net.Dial("tcp", ":3000")
-// 	if err != nil { 
-// 		panic(err)
-// 	}
+// NOTE This is needed to take data from the blokchain nothing to more , but if we run this in the main funtion , the blockchain thinks like we are new node to connect Here 
+func txSender() {
+	conn, err := net.Dial("tcp", ":3000")
+	if err != nil { 
+		panic(err)
+	}
 
-// 	privKey := crypto.GeneratePrivateKey()
-// 	data := []byte{0x03, 0x0a, 0x46, 0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d, 0x05, 0x0a, 0x0f}
+	privKey := crypto.GeneratePrivateKey()
+	data := []byte{0x03, 0x0a, 0x46, 0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d, 0x05, 0x0a, 0x0f}
 
-// 	tx := core.NewTransaction(data)
-// 	tx.Sign(privKey)
-// 	buf := &bytes.Buffer{}
-// 	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
-// 		panic(err)
-// 	}
+	tx := core.NewTransaction(data)
+	tx.Sign(privKey)
+	buf := &bytes.Buffer{}
+	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
+		panic(err)
+	}
 
-// 	msg := network.NewMessage(network.MessageTypeTx, buf.Bytes())
+	msg := network.NewMessage(network.MessageTypeTx, buf.Bytes())
 
-// 	_, err = conn.Write(msg.Bytes())
-// 	if err != nil {
-// 		panic(err)
-// 	}
+	_, err = conn.Write(msg.Bytes())
+	if err != nil {
+		panic(err)
+	}
 
-// }
+}
 
 func makeServer(id string, privKey *crypto.PrivateKey, addr string, seedNodes []string, apiListenAddr string) *network.Server {
 	opts := network.ServerOpts{

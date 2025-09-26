@@ -5,8 +5,10 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
-	"github.com/772005himanshu/Mingo-Blockchain/types"
+	"encoding/hex"
 	"math/big"
+
+	"github.com/772005himanshu/Mingo-Blockchain/types"
 )
 
 
@@ -56,6 +58,17 @@ func (k PublicKey) Address() types.Address {
 
 type Signature struct {
 	S, R *big.Int
+}
+
+func (sig Signature) String() string {
+	// buf := new(bytes.Buffer)
+	// buf.Write(sig.S.Bytes())
+	// buf.Write(sig.R.Bytes())
+
+	// return buf.String()  > Check we can do this or not ?
+
+	b := append(sig.S.Bytes(), sig.R.Bytes()...)  // ... append usually takes values one by one // If we want to append the Complete slice so we use ...
+	return hex.EncodeToString(b)
 }
 
 func (sig Signature) Verify(pubKey PubKey, data []byte) bool {

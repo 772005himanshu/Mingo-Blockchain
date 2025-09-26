@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"github.com/go-kit/log"
+	"github.com/772005himanshu/Mingo-Blockchain/types"
 	"sync"
 )
 
@@ -13,6 +14,8 @@ type Blockchain struct {
 	lock          sync.RWMutex
 	headers       []*Header // list of the slice if points to headers , we make the list in the memeory cheap and easy to retrive through it -> Ram is cheap
 	blocks        []*Block
+	txStore  map[types.Hash]*Transaction
+	blockStore    map[types.Hash]*Block
 	validator     Validator
 	contractState *State // Make it as interface
 }
@@ -24,6 +27,8 @@ func NewBlockchain(l log.Logger, genesis *Block) (*Blockchain, error) {
 		headers:       []*Header{},
 		store:         NewMemoryStore(),
 		logger:        l,
+		blockStore: make(map[types.Hash]*Block),
+		txStore: make(map[types.Hash]*Transaction),
 	}
 
 	bc.validator = NewBlockValidator(bc) // validator should be constructed from the config file
@@ -56,6 +61,19 @@ func (bc *Blockchain) AddBlock(b *Block) error {
 	return bc.addBlockWithoutValidation(b)
 }
 
+func (bc *Blockchain) GetBlockByHash(hash types.Hash) (*Block, error) {
+	bc.lock.Lock() // This prevents other goroutines from entering the critical section (the Protected code Block) at the same time
+	defer bc.lock.Unlock() // Schedules the unlock to happen when the current function returns (no matter how it exits - normal return or error)
+	// This ensures the lock is always released , avoiding deadlocks
+
+	block, ok := bc.blockStore[hash]
+	if !ok {
+		return nil, fmt.Errorf("Block with hash (%s) not found", hash)
+	}
+
+	return block, nil
+}
+
 
 func (bc *Blockchain) GetBlock(height uint32) (*Block, error) {
 	if height > bc.Height() {
@@ -68,6 +86,8 @@ func (bc *Blockchain) GetBlock(height uint32) (*Block, error) {
 	return bc.blocks[height], nil  // Get Block according to the height
 }
 
+
+
 func (bc *Blockchain) GetHeader(height uint32) (*Header, error) {
 	if height > bc.Height() {
 		return nil, fmt.Errorf("given height (%d) too high", height)
@@ -75,6 +95,18 @@ func (bc *Blockchain) GetHeader(height uint32) (*Header, error) {
 	bc.lock.Lock()                 // what is the use of this lock here
 	defer bc.lock.Unlock()         // then on next there is unlock
 	return bc.headers[height], nil // We are going to grab the header from the list
+}
+
+func (bc *Blockchain) GetTxByHash(hash types.Hash) (*Transaction, error) {
+	bc.lock.Lock()
+	defer bc.lock.Unlock()
+
+	tx, ok := bc.txStore[hash]
+	if !ok {
+		return nil, fmt.Errorf("could not find tx with hash (%s)", hash)
+	}
+
+	return tx, nil
 }
 
 func (bc *Blockchain) HasBlock(height uint32) bool {
@@ -94,6 +126,11 @@ func (bc *Blockchain) addBlockWithoutValidation(b *Block) error {
 	bc.lock.Lock()
 	bc.headers = append(bc.headers, b.Header)
 	bc.blocks = append(bc.blocks, b)
+	bc.blockStore[b.Hash(BlockHasher{})] = b
+
+	for _, tx := range b.Transactions {
+		bc.txStore[tx.Hash(TxHasher{})] = tx
+	}
 	bc.lock.Unlock()
 
 	bc.logger.Log(
