@@ -9,8 +9,7 @@ import (
 
 // Only the Public Value to be encoded in the Transactions
 type Transaction struct {
-	Data []byte
-
+	Data []byte // What is this data mean this is the ByteCode for the VM here 
 	From      crypto.PublicKey
 	Signature *crypto.Signature
 

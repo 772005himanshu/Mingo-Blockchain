@@ -3,14 +3,14 @@ package main
 import (
 	"bytes"
 	"log"
-	// "fmt"
+	"fmt"
 	// "encoding/gob"
 	"time"
 	"github.com/772005himanshu/Mingo-Blockchain/core"
 	"github.com/772005himanshu/Mingo-Blockchain/crypto"
 	"github.com/772005himanshu/Mingo-Blockchain/network"
 	// "github.com/sirupsen/logrus"
-	"net"
+	"net/http"
 	// "time"
 )
 
@@ -42,10 +42,10 @@ func main() {
 
 // NOTE This is needed to take data from the blokchain nothing to more , but if we run this in the main funtion , the blockchain thinks like we are new node to connect Here 
 func txSender() {
-	conn, err := net.Dial("tcp", ":3000")
-	if err != nil { 
-		panic(err)
-	}
+	// conn, err := net.Dial("tcp", ":3000")
+	// if err != nil { 
+	// 	panic(err)
+	// }
 
 	privKey := crypto.GeneratePrivateKey()
 	data := []byte{0x03, 0x0a, 0x46, 0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d, 0x05, 0x0a, 0x0f}
@@ -57,12 +57,30 @@ func txSender() {
 		panic(err)
 	}
 
-	msg := network.NewMessage(network.MessageTypeTx, buf.Bytes())
+	// msg := network.NewMessage(network.MessageTypeTx, buf.Bytes())
 
-	_, err = conn.Write(msg.Bytes())
+	// _, err = conn.Write(msg.Bytes())
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	req, err := http.NewRequest("POST","http://localhost:9000/tx",buf)
+
 	if err != nil {
 		panic(err)
 	}
+
+	client := http.DefaultClient
+
+	resp , err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%+v\n", resp)
+
+
+	
 
 }
 

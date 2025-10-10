@@ -8,6 +8,8 @@ import (
 	"github.com/772005himanshu/Mingo-Blockchain/types"
 	"strconv" // string Converter
 	"encoding/hex"
+	"encoding/gob"
+	"fmt"
 	
 )
 
@@ -59,8 +61,21 @@ func (s *Server) Start() error {
 
 	e.GET("/block/:hashorid", s.handleGetBlock)
 	e.GET("/tx/:hash", s.handleGetTx)
+	e.POST("/tx", s.handlePostTx)
+
 
 	return e.Start(s.ListenAddr)
+}
+
+func (s *Server) handlePostTx(c echo.Context) error {
+	tx := &core.Transaction{}
+	if err := gob.NewDecoder(c.Request().Body).Decode(tx); err != nil {
+		return c.JSON(http.StatusBadRequest, APIError{Error: err.Error()})
+	}
+
+	fmt.Printf("%+v\n", tx)
+
+	return nil
 }
 
 func (s *Server) handleGetBlock(c echo.Context) error {
