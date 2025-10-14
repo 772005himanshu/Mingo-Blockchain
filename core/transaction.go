@@ -2,27 +2,51 @@ package core
 
 import (
 	"fmt"
+	"math/rand"
 
 	"github.com/772005himanshu/Mingo-Blockchain/crypto"
 	"github.com/772005himanshu/Mingo-Blockchain/types"
 )
 
+type TxType byte
+
+const (
+    TxTypeCollection TxType = iota // 0x0 Collection of the NFT we have minted
+    TxTypeMint                    // 0x1
+)
+
+
+type CollectionTx struct {
+    Fee int64  // if you want to place the Collection we have to pay the fee
+    Metadata []byte
+}
+
+type MintTx struct {
+    Fee int64
+    NFT types.Hash // It is the simple byte data holding ut represent the Value
+    Collection type.Hash // To separate the different NFT to different types Simply saying
+    Metadata      []byte  // Show some data like name , symbol , value it holds
+    CollectionOwner crypto.PublicKey
+    Signature       crypto.Signature
+}
+
 // Only the Public Value to be encoded in the Transactions
 type Transaction struct {
+    Type TxType
+    TxInner any // interface{}
 	Data []byte // What is this data mean this is the ByteCode for the VM here 
 	From      crypto.PublicKey
 	Signature *crypto.Signature
+    Nonce     uint64
 
 	// cached version of the tx data hash
 	hash types.Hash
-
-	// // first Seen is the Timestamp of when this tx is first seen locally
-	// firstSeen int64
 }
 
 func NewTransaction(data []byte) *Transaction {
 	return &Transaction{
 		Data: data,
+		Nonce: rand.Int63n(1000000000), // updating the state every time in the Contract
 	}
 }
 

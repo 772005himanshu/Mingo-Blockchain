@@ -5,6 +5,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"github.com/772005himanshu/Mingo-Blockchain/core"
+// 	"github.com/772005himanshu/Mingo-Blockchain/network"
 	"github.com/772005himanshu/Mingo-Blockchain/types"
 	"strconv" // string Converter
 	"encoding/hex"
@@ -43,15 +44,17 @@ type ServerConfig struct {
 
 
 type Server struct {
+    txChan chan *core.Transaction
 	ServerConfig
 	bc *core.Blockchain
 }
 
-
-func NewServer(cfg ServerConfig, bc *core.Blockchain) *Server{
+// Check for the circular dependencies in the Contract
+func NewServer(cfg ServerConfig, bc *core.Blockchain, txChan chan *core.Transaction) *Server{
 	return &Server{
 		ServerConfig: cfg,
 		bc : bc,
+		txChan: txChan,
 	}
 
 }
@@ -68,12 +71,12 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) handlePostTx(c echo.Context) error {
-	tx := &core.Transaction{}
+	tx := &core.Transaction{} // taking the tx from the tx handling to the JSON rpc handling
 	if err := gob.NewDecoder(c.Request().Body).Decode(tx); err != nil {
 		return c.JSON(http.StatusBadRequest, APIError{Error: err.Error()})
 	}
 
-	fmt.Printf("%+v\n", tx)
+    s.txChan <- tx
 
 	return nil
 }

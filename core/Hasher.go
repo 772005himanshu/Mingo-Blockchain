@@ -22,5 +22,9 @@ func (BlockHasher) Hash(b *Header) types.Hash {
 type TxHasher struct{}
 
 func (TxHasher) Hash(tx *Transaction) types.Hash {
+    buf:= make([]byte, 8)
+    binary.LittleEndian.PutUint64(buf, uint64(tx.Nonce))
+
+    data := append(buf, tx.Data...)
 	return types.Hash(sha256.Sum256(tx.Data))
 }

@@ -17,6 +17,8 @@ import (
 	"github.com/go-kit/log"
 )
 
+// This is used for handling the network / blockchain network
+
 var defaultBlockTime = 5 * time.Second
 
 type ServerOpts struct {
@@ -43,6 +45,7 @@ type Server struct {
 	rpcCh       chan RPC
 	quitCh      chan struct{}
 	mu          sync.RWMutex
+	txChan     chan *core.Transaction
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -62,6 +65,10 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		return nil, err
 	}
 
+    // channel being used to communicate between the JSON RPC Server
+    // and the node that will process this message
+    txChan := make(chan *core.Transaction)
+
 	// JSON RPC Server
 	// Only boot Up the API Server if the config has a valid port number
 	if len(opts.APIListenAddr) > 0 {
@@ -69,11 +76,13 @@ func NewServer(opts ServerOpts) (*Server, error) {
 			Logger: opts.Logger,
 			ListenAddr: opts.APIListenAddr,
 		}
-		apiServer := api.NewServer(apiServerCfg,chain )
+		apiServer := api.NewServer(apiServerCfg,chain, txChan )
 		go apiServer.Start()
 
 		opts.Logger.Log("msg", "JSON API server running", "port", opts.APIListenAddr)
 	}
+
+
 	peerCh := make(chan *TCPPeer)
 	tr := NewTCPTransport(opts.ListenAddr, peerCh)
 
@@ -88,6 +97,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		isValidator: opts.PrivateKey != nil,
 		rpcCh:       make(chan RPC),
 		quitCh:      make(chan struct{}, 1),
+        tcChan:      txChan,
 	}
 
 	s.TCPTransport.peerCh = peerCh // this is specific path we are using
@@ -154,6 +164,13 @@ free:
 			}
 
 			s.Logger.Log("msg", "peer added to the server", "outgoing", peer.Outgoing , "addr", peer.conn.RemoteAddr())
+
+
+		case tx := <-s.txChan:
+            panic("here")
+            if err := s.processTransaction(tx); err != nil {
+                s.Logger.Log("process TX error", err)
+            }
 
 		case rpc := <-s.rpcCh:
 			msg, err := s.RPCDecodeFunc(rpc)

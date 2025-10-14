@@ -35,8 +35,16 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-	txSender()
+	txSenderTicker := time.NewTicker(1 * time.second)
 
+	// Never use the ticker in the loop , it lead to the DOS i think
+	go func() {
+        for {
+            txSender()
+
+            <-txSendTicker.C
+        }
+	}()
 	select {}  // select the block and goroutines here 
 }
 
@@ -52,6 +60,7 @@ func txSender() {
 
 	tx := core.NewTransaction(data)
 	tx.Sign(privKey)
+
 	buf := &bytes.Buffer{}
 	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
 		panic(err)
@@ -64,23 +73,18 @@ func txSender() {
 	// 	panic(err)
 	// }
 
-	req, err := http.NewRequest("POST","http://localhost:9000/tx",buf)
+	req,err := http.NewRequest("POST","http://localhost:9000/tx",buf) // how we check what we need in the function
 
 	if err != nil {
 		panic(err)
 	}
 
-	client := http.DefaultClient
+	client := http.Client()
 
-	resp , err := client.Do(req)
+	_ , err := client.Do(req)
 	if err != nil {
 		panic(err)
-	}
-
-	fmt.Printf("%+v\n", resp)
-
-
-	
+	}  // always check the err never missing the error handling absolute in the smart COntract
 
 }
 

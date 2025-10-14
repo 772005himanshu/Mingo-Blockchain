@@ -7,6 +7,29 @@ import (
 	"testing"
 )
 
+
+func TestNFTTransaction(t *Testing.T) {
+    collectionTx := &CollectionTx{
+        Fee : 200,
+        Metadata: []byte("The beginning of the new collection"),
+    }
+    privKey := crypto.GeneratePrivateKey()
+    tx := &Transaction{
+        TxType: TxTypeCollection,
+        TxInner: collectionTx,
+    }
+
+    tx.Sign(privKey)
+
+    buf := new(bytes.Buffer)
+    assert.Nil(t, gob.NewEncoder(buf).Encode(tx))
+
+    txDecoded := &Transaction{}
+    assert.Nil(t, gob.NewDecoder(buf).Decode(txDecoded))
+
+    fmt.Printf("%+v\n", txDecoded)
+}
+
 func TestSignTransaction(t *testing.T) {
 	privKey := crypto.GeneratePrivateKey()
 	data := []byte("foo")
