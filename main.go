@@ -56,9 +56,14 @@ func txSender() {
 	// }
 
 	privKey := crypto.GeneratePrivateKey()
-	data := []byte{0x03, 0x0a, 0x46, 0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d, 0x05, 0x0a, 0x0f}
+// 	data := []byte{0x03, 0x0a, 0x46, 0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d, 0x05, 0x0a, 0x0f}
 
-	tx := core.NewTransaction(data)
+// 	tx := core.NewTransaction(data)
+    tx := core.NewTransaction(nil)
+    tx.TxInner = core.CollectionTx{
+        Fee: 200,
+        Metadata: []byte("chicken and egg collection"),
+    }
 	tx.Sign(privKey)
 
 	buf := &bytes.Buffer{}

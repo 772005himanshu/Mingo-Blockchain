@@ -8,6 +8,9 @@ import (
 	"github.com/772005himanshu/Mingo-Blockchain/types"
 )
 
+// We create the collection owner of the collection is the public key of main transaction(parent key)
+// The sender of the transaction
+
 type TxType byte
 
 const (
@@ -35,7 +38,7 @@ type Transaction struct {
     Type TxType
     TxInner any // interface{}
 	Data []byte // What is this data mean this is the ByteCode for the VM here 
-	From      crypto.PublicKey
+	From      crypto.PublicKey  // the sender of the transaction
 	Signature *crypto.Signature
     Nonce     uint64
 
@@ -89,10 +92,7 @@ func (tx *Transaction) Encode(enc Encoder[*Transaction]) error {
 	return enc.Encode(tx)
 }
 
-// func (tx *Transaction) SetFirstSeen(t int64) {
-// 	tx.firstSeen = t
-// }
-
-// func (tx *Transaction) FirstSeen() int64 {
-// 	return tx.firstSeen
-// }
+func init() {
+    gob.Register(CollectionTx{})
+    gob.Register(MintTx{})
+}
